@@ -1,29 +1,40 @@
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useEffect } from "react";
-import * as SplashScreen from "expo-splash-screen";
+// app/(tabs)/_layout.jsx
+import React from "react";
+import { Tabs } from "expo-router";
 
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  useEffect(() => {
-    const t = setTimeout(() => {
-      SplashScreen.hideAsync();
-    }, 600);
-    return () => clearTimeout(t);
-  }, []);
-
+function TabsLayout() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: "#161622" },
-          headerTintColor: "#fff",
-          contentStyle: { backgroundColor: "#161622" },
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Home",
         }}
       />
-    </SafeAreaProvider>
+      <Tabs.Screen
+        name="bookmark"
+        options={{
+          title: "Bookmark",
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: "Create",
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+        }}
+      />
+    </Tabs>
   );
 }
+
+export default TabsLayout;
