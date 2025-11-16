@@ -1,37 +1,28 @@
 {
   "expo": {
-    "name": "Aora",
-    "slug": "aora",
-    "scheme": "aora",
-    "owner": "",
-    "version": "1.0.0",
+    "name": "JMLabs",
+    "slug": "cs-370-react-native-starter-ljm234",
+    "scheme": "jmlabs",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#161622",
-      "resizeMode": "contain"
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#020817"
     },
-    "updates": {
-      "enabled": true,
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.example.aora"
+      "bundleIdentifier": "com.jmlabs.app",
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.example.aora",
+      "package": "com.jmlabs.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#161622"
+        "backgroundColor": "#020817"
       }
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": ["expo-router"]
+      "bundler": "metro"
+    }
   }
 }
