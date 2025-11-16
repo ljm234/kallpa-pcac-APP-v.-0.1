@@ -19,7 +19,8 @@ export default function Onboarding() {
   const router = useRouter();
 
   const handleContinue = () => {
-    router.push("/(auth)/sign-in");
+    // Route groups like (auth) are not part of the URL
+    router.push("/sign-in");
   };
 
   return (
@@ -31,10 +32,8 @@ export default function Onboarding() {
         bounces={false}
       >
         <View style={styles.card}>
-          {/* Logo */}
           <Image source={appIcon} style={styles.logo} resizeMode="contain" />
 
-          {/* Textos */}
           <Text style={styles.heading}>Welcome to JM Labs - TEST VERSION</Text>
 
           <Text style={styles.title}>
@@ -42,11 +41,10 @@ export default function Onboarding() {
           </Text>
 
           <Text style={styles.subtitle}>
-            A space where code and biology meet. Capture ideas, run experiments,
-            and keep your projects organized from day one.
+            A space where code and biology meet. Capture ideas, run
+            experiments, and keep your projects organized from day one.
           </Text>
 
-          {/* Botón principal */}
           <View style={styles.buttonSection}>
             <CustomButton
               title="Continue with email"
@@ -67,7 +65,7 @@ export default function Onboarding() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0f172a", //blue
+    backgroundColor: "#0f172a",
   },
   scrollContent: {
     flexGrow: 1,
@@ -84,12 +82,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 26,
     paddingVertical: 30,
     alignItems: "center",
-    // sombrita
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    elevation: 6,
+    // simple shadow, web-safe
+    borderColor: "#e5e7eb",
+    borderWidth: 1,
   },
   logo: {
     width: 96,
