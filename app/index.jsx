@@ -1,67 +1,130 @@
 // app/index.jsx
+
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Link } from "expo-router";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
 
-export default function Welcome() {
+import CustomButton from "../components/CustomButton";
+import appIcon from "../assets/icon.png";
+
+export default function Onboarding() {
+  const router = useRouter();
+
+  const handleContinue = () => {
+    router.push("/(auth)/sign-in");
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.logo}>Aora</Text>
-        <Text style={styles.subtitle}>Welcome to the starter app.</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="light" />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View style={styles.card}>
+          {/* Logo */}
+          <Image source={appIcon} style={styles.logo} resizeMode="contain" />
 
-        <Link href="/home" asChild>
-          <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Go to Home</Text>
-          </Pressable>
-        </Link>
-      </View>
-    </View>
+          {/* Textos */}
+          <Text style={styles.heading}>Welcome to JM Labs - TEST VERSION</Text>
+
+          <Text style={styles.title}>
+            Discover endless possibilities with JM
+          </Text>
+
+          <Text style={styles.subtitle}>
+            A space where code and biology meet. Capture ideas, run experiments,
+            and keep your projects organized from day one.
+          </Text>
+
+          {/* Botón principal */}
+          <View style={styles.buttonSection}>
+            <CustomButton
+              title="Continue with email"
+              handlePress={handleContinue}
+              isLoading={false}
+            />
+          </View>
+
+          <Text style={styles.footer}>
+            By continuing you accept the terms of use and privacy policy.
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#e5edf5", // soft bluish background
+    backgroundColor: "#0f172a", //blue
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   card: {
     width: "100%",
     maxWidth: 420,
     backgroundColor: "#ffffff",
-    borderRadius: 18,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    shadowColor: "#000000",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    borderRadius: 24,
+    paddingHorizontal: 26,
+    paddingVertical: 30,
+    alignItems: "center",
+    // sombrita
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 6,
   },
   logo: {
-    fontSize: 32,
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    marginBottom: 12,
+  },
+  heading: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+  },
+  title: {
+    marginTop: 6,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#0f172a", // dark slate
-    marginBottom: 8,
+    color: "#111827",
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    color: "#4b5563", // neutral gray
-    marginBottom: 28,
+    marginTop: 10,
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#4b5563",
+    textAlign: "center",
   },
-  button: {
-    backgroundColor: "#2563eb", // blue
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
+  buttonSection: {
+    marginTop: 24,
+    width: "100%",
     alignItems: "center",
   },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
+  footer: {
+    marginTop: 14,
+    fontSize: 11,
+    color: "#9ca3af",
+    textAlign: "center",
   },
 });

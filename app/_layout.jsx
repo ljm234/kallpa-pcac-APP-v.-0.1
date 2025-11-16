@@ -1,16 +1,26 @@
 // app/_layout.jsx
+
 import React from "react";
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useColorScheme } from "react-native";
 
 function RootLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {/* Bottom tabs group (Home, Bookmark, Create, Profile) */}
-      <Stack.Screen name="(tabs)" />
+  const colorScheme = useColorScheme();
 
-      {/* Auth group (Sign In, Sign Up) */}
-      <Stack.Screen name="(auth)" />
-    </Stack>
+  return (
+    <>
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="search/[query]"
+          options={{ headerShown: false }}
+        />
+      </Stack>
+    </>
   );
 }
 
