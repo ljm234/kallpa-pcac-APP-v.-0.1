@@ -7,14 +7,17 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { Link, Redirect, useRouter } from 'expo-router';
 
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
-import { signInWithEmail } from '../../lib/appwrite';
+import { signIn } from '../../lib/appwrite';
+import { useGlobalContext } from '../../context/GlobalProvider';
 
 const SignIn = () => {
   const router = useRouter();
+  const { isAuthLoading, isLoggedIn, setUser, setIsLoggedIn } =
+    useGlobalContext();
 
   const [form, setForm] = useState({
     email: '',
@@ -22,52 +25,56 @@ const SignIn = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setValidationError('');
   };
 
   const handleSignIn = async () => {
     if (isSubmitting) return;
 
-    if (!form.email || !form.password) {
-      Alert.alert(
-        'Missing information',
-        'Please fill in email and password.'
-      );
+    const email = form.email.trim();
+    const password = form.password;
+
+    // EMPTY-FIELDS CHECK
+    if (!email || !password) {
+      const msg = 'Please fill in email and password.';
+      setValidationError(msg);
+      Alert.alert('Missing information', msg);
       return;
     }
 
     setIsSubmitting(true);
-    setFeedback('');
-    console.log('Submitting sign in form', form);
 
     try {
-      const result = await signInWithEmail({
-        email: form.email.trim(),
-        password: form.password,
-      });
+      const { user } = await signIn({ email, password });
 
-      console.log('Supabase signIn result:', result);
+      setUser(user);
+      setIsLoggedIn(true);
 
-      setFeedback('Signed in. Welcome back to JM Labs!');
       Alert.alert('Signed in', 'Welcome back to JM Labs!', [
         {
           text: 'OK',
-          onPress: () => router.replace('/'),
+          onPress: () => router.replace('/(tabs)/home'),
         },
       ]);
     } catch (error) {
       console.error('Sign in failed', error);
-      const msg =
-        error?.message ?? 'Unexpected error while signing in.';
-      setFeedback(msg);
-      Alert.alert('Sign in failed', msg);
+      Alert.alert(
+        'Sign in failed',
+        error?.message ??
+          'Unexpected error while signing you in.'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!isAuthLoading && isLoggedIn) {
+    return <Redirect href="/(tabs)/home" />;
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#020617' }}>
@@ -138,28 +145,25 @@ const SignIn = () => {
                 title="Password"
                 placeholder="Enter your password"
                 value={form.password}
-                onChangeText={(value) =>
-                  handleChange('password', value)
-                }
+                onChangeText={(value) => handleChange('password', value)}
                 secureTextEntry
                 isPassword
               />
             </View>
 
-            {feedback !== '' && (
+            {/* Inline validation message */}
+            {validationError ? (
               <Text
                 style={{
-                  marginTop: 16,
-                  fontSize: 14,
+                  marginTop: 10,
+                  fontSize: 13,
+                  color: '#dc2626',
                   textAlign: 'center',
-                  color: feedback.startsWith('Signed in')
-                    ? '#16a34a'
-                    : '#dc2626',
                 }}
               >
-                {feedback}
+                {validationError}
               </Text>
-            )}
+            ) : null}
 
             <CustomButton
               title={isSubmitting ? 'Signing in…' : 'Sign in'}

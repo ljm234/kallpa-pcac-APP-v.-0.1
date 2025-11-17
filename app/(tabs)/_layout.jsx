@@ -1,126 +1,84 @@
 // app/(tabs)/_layout.jsx
-import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
-import { Tabs } from "expo-router";
-import { icons } from "../../constants";
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { View, Text } from 'react-native';
 
-function TabIcon({ icon, color, name, focused }) {
+// Simple text-only tab icon used for all tabs
+const SimpleTabIcon = ({ label, color, focused }) => {
   return (
-    <View style={styles.iconContainer}>
-      <Image
-        source={icon}
-        resizeMode="contain"
-        style={[styles.iconImage, { tintColor: color }]}
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 999,
+          marginBottom: 4,
+          backgroundColor: focused ? color : 'transparent',
+        }}
       />
       <Text
-        style={[
-          styles.iconLabel,
-          focused ? styles.iconLabelFocused : null,
-        ]}
+        style={{
+          fontSize: 12,
+          color,
+          fontWeight: focused ? '600' : '400',
+        }}
       >
-        {name}
+        {label}
       </Text>
     </View>
   );
-}
+};
 
-function TabsLayout() {
+export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: '#2563eb',
+        tabBarInactiveTintColor: '#6b7280',
         tabBarShowLabel: false,
-        tabBarActiveTintColor: "#2563eb",   // active blue
-        tabBarInactiveTintColor: "#9ca3af", // gray
         tabBarStyle: {
-          backgroundColor: "#020617",       // dark navy
-          borderTopWidth: 1,
-          borderTopColor: "#1f2937",
-          height: 72,
+          backgroundColor: '#020617',
+          borderTopColor: '#1f2937',
         },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
-          title: "Home",
+          title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              icon={icons.home}
-              color={color}
-              name="Home"
-              focused={focused}
-            />
+            <SimpleTabIcon label="Home" color={color} focused={focused} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="bookmark"
         options={{
-          title: "Bookmark",
+          title: 'Bookmark',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              icon={icons.bookmark}
-              color={color}
-              name="Bookmark"
-              focused={focused}
-            />
+            <SimpleTabIcon label="Bookmark" color={color} focused={focused} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="create"
         options={{
-          title: "Create",
+          title: 'Create',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              icon={icons.plus}
-              color={color}
-              name="Create"
-              focused={focused}
-            />
+            <SimpleTabIcon label="Create" color={color} focused={focused} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              icon={icons.profile}
-              color={color}
-              name="Profile"
-              focused={focused}
-            />
+            <SimpleTabIcon label="Profile" color={color} focused={focused} />
           ),
         }}
       />
     </Tabs>
   );
 }
-
-export default TabsLayout;
-
-const styles = StyleSheet.create({
-  iconContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconImage: {
-    width: 24,
-    height: 24,
-  },
-  iconLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    color: "#9ca3af",
-  },
-  iconLabelFocused: {
-    color: "#ffffff",
-    fontWeight: "600",
-  },
-});

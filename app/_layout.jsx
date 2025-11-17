@@ -1,27 +1,21 @@
 // app/_layout.jsx
+import React from 'react';
+import { Stack } from 'expo-router';
+import { GlobalProvider } from '../context/GlobalProvider';
 
-import React from "react";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
-
-function RootLayout() {
-  const colorScheme = useColorScheme();
-
+export default function RootLayout() {
   return (
-    <>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+    <GlobalProvider>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="search/[query]"
-          options={{ headerShown: false }}
-        />
+        {/* Auth stack */}
+        <Stack.Screen name="(auth)" />
+
+        {/* Main app (tabs) */}
+        <Stack.Screen name="(tabs)" />
+
+        {/* Default not-found route */}
+        <Stack.Screen name="+not-found" />
       </Stack>
-    </>
+    </GlobalProvider>
   );
 }
-
-export default RootLayout;

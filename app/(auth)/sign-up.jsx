@@ -7,14 +7,16 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { Link, Redirect, useRouter } from 'expo-router';
 
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
-import { signUpWithEmail } from '../../lib/appwrite';
+import { createUser } from '../../lib/appwrite';
+import { useGlobalContext } from '../../context/GlobalProvider';
 
 const SignUp = () => {
   const router = useRouter();
+  const { isAuthLoading, isLoggedIn } = useGlobalContext();
 
   const [form, setForm] = useState({
     username: '',
@@ -23,40 +25,37 @@ const SignUp = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState(''); // inline confirmation text
+  const [validationError, setValidationError] = useState('');
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    // clear validation message as soon as user types
+    setValidationError('');
   };
 
   const handleSignUp = async () => {
     if (isSubmitting) return;
 
-    if (!form.username || !form.email || !form.password) {
-      Alert.alert(
-        'Missing information',
-        'Please fill in username, email, and password.'
-      );
+    const username = form.username.trim();
+    const email = form.email.trim();
+    const password = form.password;
+
+    // EMPTY FIELDS CHECK
+    if (!username || !email || !password) {
+      const msg = 'Please fill in username, email, and password.';
+      setValidationError(msg);
+      Alert.alert('Missing information', msg);
       return;
     }
 
     setIsSubmitting(true);
-    setFeedback('');
-    console.log('Submitting sign up form', form);
 
     try {
-      const result = await signUpWithEmail({
-        email: form.email.trim(),
-        password: form.password,
-        username: form.username.trim(),
+      await createUser({
+        email,
+        password,
+        username,
       });
-
-      console.log('Supabase signUp result:', result);
-
-      // Inline message + optional alert
-      setFeedback(
-        'Account created. Check your email to confirm, then sign in.'
-      );
 
       Alert.alert(
         'Account created',
@@ -70,14 +69,20 @@ const SignUp = () => {
       );
     } catch (error) {
       console.error('Sign up failed', error);
-      const msg =
-        error?.message ?? 'Unexpected error while creating your account.';
-      setFeedback(msg);
-      Alert.alert('Sign up failed', msg);
+      Alert.alert(
+        'Sign up failed',
+        error?.message ??
+          'Unexpected error while creating your account.'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Already logged in? Skip auth screens
+  if (!isAuthLoading && isLoggedIn) {
+    return <Redirect href="/(tabs)/home" />;
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#020617' }}>
@@ -167,21 +172,19 @@ const SignUp = () => {
               />
             </View>
 
-            {/* Inline success / error message */}
-            {feedback !== '' && (
+            {/* Inline validation message */}
+            {validationError ? (
               <Text
                 style={{
-                  marginTop: 16,
-                  fontSize: 14,
+                  marginTop: 10,
+                  fontSize: 13,
+                  color: '#dc2626',
                   textAlign: 'center',
-                  color: feedback.startsWith('Account created')
-                    ? '#16a34a' // green
-                    : '#dc2626', // red
                 }}
               >
-                {feedback}
+                {validationError}
               </Text>
-            )}
+            ) : null}
 
             <CustomButton
               title={isSubmitting ? 'Creating account…' : 'Sign up'}
