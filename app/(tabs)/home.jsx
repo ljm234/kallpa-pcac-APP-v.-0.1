@@ -1,41 +1,21 @@
 // app/(tabs)/home.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SearchInput from '../../components/SearchInput';
+import Trending from '../../components/Trending';
+import EmptyState from '../../components/EmptyState';
 import { useGlobalContext } from '../../context/GlobalProvider';
+import { getAllPosts } from '../../lib/appwrite';
 
-// Simple mock data for "Latest Videos"
-const MOCK_VIDEOS = [
-  {
-    id: 'v1',
-    title: 'ER stress pathways in Naegleria fowleri',
-    author: 'Jordan Montenegro',
-  },
-  {
-    id: 'v2',
-    title: 'Intro to JM Labs: organizing experiments and notes',
-    author: 'Jordan Montenegro',
-  },
-  {
-    id: 'v3',
-    title: 'Designing better lab notebooks with React Native',
-    author: 'Jordan Montenegro',
-  },
-  {
-    id: 'v4',
-    title: 'Clinical AI: from prototype to practice',
-    author: 'Jordan Montenegro',
-  },
-];
-
-// Turn the username into a consistent accent color
 const getAccentFromName = (name) => {
   if (!name) {
     return {
@@ -58,7 +38,11 @@ const getAccentFromName = (name) => {
 
 const Home = () => {
   const { user } = useGlobalContext();
+
+  const [posts, setPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const username = useMemo(() => {
     const metaName = user?.user_metadata?.username;
@@ -72,23 +56,55 @@ const Home = () => {
 
   const accent = useMemo(() => getAccentFromName(username), [username]);
 
-  const filteredVideos = useMemo(() => {
-    if (!searchQuery.trim()) return MOCK_VIDEOS;
+  const loadPosts = async () => {
+    const data = await getAllPosts();
+    setPosts(data);
+  };
 
-    const query = searchQuery.toLowerCase();
-    return MOCK_VIDEOS.filter(
-      (video) =>
-        video.title.toLowerCase().includes(query) ||
-        video.author.toLowerCase().includes(query)
+  useEffect(() => {
+    (async () => {
+      try {
+        setIsLoading(true);
+        await loadPosts();
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await loadPosts();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return posts;
+
+    const q = searchQuery.toLowerCase();
+    return posts.filter(
+      (post) =>
+        (post.title ?? '').toLowerCase().includes(q) ||
+        (post.author ?? '').toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [posts, searchQuery]);
 
   const handleSearch = () => {
     console.log('Searching videos for:', searchQuery);
   };
 
-  const renderVideoCard = ({ item, index }) => (
+  // Top “Trending” row (horizontal)
+  const trendingPosts = useMemo(
+    () => filteredPosts.slice(0, 5),
+    [filteredPosts]
+  );
+
+  const renderPostCard = ({ item, index }) => (
     <View style={styles.card}>
+      {/* Header badges */}
       <View style={styles.cardHeader}>
         <Text style={[styles.videoBadge, { color: accent.solid }]}>
           {index === 0 ? 'Trending' : 'Recent'}
@@ -96,14 +112,17 @@ const Home = () => {
         <Text style={styles.videoMetaRight}>5 min watch</Text>
       </View>
 
+      {/* White placeholder area for the future player */}
       <View style={styles.videoPlaceholder}>
         <Text style={styles.videoPlaceholderText}>Video placeholder</Text>
       </View>
 
       <Text style={styles.videoTitle} numberOfLines={2}>
-        {item.title}
+        {item.title ?? 'Untitled video'}
       </Text>
-      <Text style={styles.videoMeta}>{item.author}</Text>
+      <Text style={styles.videoMeta}>
+        {item.author ?? 'Unknown author'}
+      </Text>
     </View>
   );
 
@@ -155,19 +174,48 @@ const Home = () => {
         onSubmit={handleSearch}
       />
 
-      <Text style={styles.sectionTitle}>Latest Videos</Text>
+      {/* Horizontal Trending row */}
+      <Trending posts={trendingPosts} />
+
+      {/* Only show "Latest videos" when we have data */}
+      {filteredPosts.length > 0 && (
+        <Text style={styles.sectionTitle}>Latest Videos</Text>
+      )}
     </View>
   );
+
+  if (isLoading && posts.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingWrapper}>
+          <ActivityIndicator size="large" color="#f97316" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
-        data={filteredVideos}
-        keyExtractor={(item) => item.id}
-        renderItem={renderVideoCard}
+        data={filteredPosts}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderPostCard}
         ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          <EmptyState
+            title="No videos yet"
+            subtitle="Be the first one to upload a video."
+          />
+        }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#f97316"
+          />
+        }
       />
     </SafeAreaView>
   );
@@ -183,6 +231,12 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingBottom: 32,
+  },
+  loadingWrapper: {
+    flex: 1,
+    backgroundColor: '#020617',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     paddingTop: 16,
