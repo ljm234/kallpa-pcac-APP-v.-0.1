@@ -1,5 +1,5 @@
 // app/(tabs)/home.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SearchInput from '../../components/SearchInput';
 import Trending from '../../components/Trending';
+import VideoCard from '../../components/VideoCard';
 import EmptyState from '../../components/EmptyState';
 import { useGlobalContext } from '../../context/GlobalProvider';
+import { useAppwrite } from '../../hooks/useAppwrite';
 import { getAllPosts } from '../../lib/appwrite';
 
 const getAccentFromName = (name) => {
@@ -39,10 +41,11 @@ const getAccentFromName = (name) => {
 const Home = () => {
   const { user } = useGlobalContext();
 
-  const [posts, setPosts] = useState([]);
+  // Use the custom hook for fetching posts
+  const { data: posts, isLoading, refetch } = useAppwrite(getAllPosts);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   const username = useMemo(() => {
     const metaName = user?.user_metadata?.username;
@@ -56,26 +59,11 @@ const Home = () => {
 
   const accent = useMemo(() => getAccentFromName(username), [username]);
 
-  const loadPosts = async () => {
-    const data = await getAllPosts();
-    setPosts(data);
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setIsLoading(true);
-        await loadPosts();
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, []);
-
+  // Handle pull-to-refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await loadPosts();
+      await refetch();
     } finally {
       setIsRefreshing(false);
     }
@@ -96,34 +84,28 @@ const Home = () => {
     console.log('Searching videos for:', searchQuery);
   };
 
-  // Top “Trending” row (horizontal)
+  // Track which videos are playing
+  const [playingVideos, setPlayingVideos] = useState({});
+
+  const handleVideoPress = (isPlaying, videoId) => {
+    setPlayingVideos((prev) => ({
+      ...prev,
+      [videoId]: isPlaying,
+    }));
+  };
+
+  const renderPostCard = ({ item }) => (
+    <VideoCard
+      video={item}
+      compact={false}
+      onPress={handleVideoPress}
+    />
+  );
+
+  // Top "Trending" row (horizontal)
   const trendingPosts = useMemo(
     () => filteredPosts.slice(0, 5),
     [filteredPosts]
-  );
-
-  const renderPostCard = ({ item, index }) => (
-    <View style={styles.card}>
-      {/* Header badges */}
-      <View style={styles.cardHeader}>
-        <Text style={[styles.videoBadge, { color: accent.solid }]}>
-          {index === 0 ? 'Trending' : 'Recent'}
-        </Text>
-        <Text style={styles.videoMetaRight}>5 min watch</Text>
-      </View>
-
-      {/* White placeholder area for the future player */}
-      <View style={styles.videoPlaceholder}>
-        <Text style={styles.videoPlaceholderText}>Video placeholder</Text>
-      </View>
-
-      <Text style={styles.videoTitle} numberOfLines={2}>
-        {item.title ?? 'Untitled video'}
-      </Text>
-      <Text style={styles.videoMeta}>
-        {item.author ?? 'Unknown author'}
-      </Text>
-    </View>
   );
 
   const listHeader = (
@@ -175,7 +157,7 @@ const Home = () => {
       />
 
       {/* Horizontal Trending row */}
-      <Trending posts={trendingPosts} />
+      <Trending posts={trendingPosts} onVideoPress={handleVideoPress} />
 
       {/* Only show "Latest videos" when we have data */}
       {filteredPosts.length > 0 && (
@@ -312,59 +294,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
-  },
-  card: {
-    borderRadius: 24,
-    backgroundColor: '#020617',
-    borderWidth: 1,
-    borderColor: '#111827',
-    padding: 14,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.45,
-    shadowOffset: { width: 0, height: 18 },
-    shadowRadius: 28,
-    elevation: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  videoBadge: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  videoMetaRight: {
-    fontSize: 11,
-    color: '#9CA3AF',
-  },
-  videoPlaceholder: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    height: 180,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  videoPlaceholderText: {
-    color: '#6B7280',
-    fontSize: 13,
-    fontWeight: '500',
-    letterSpacing: 0.2,
-  },
-  videoTitle: {
-    color: '#F9FAFB',
-    fontSize: 17,
-    fontWeight: '700',
-    lineHeight: 22,
-  },
-  videoMeta: {
-    color: '#9CA3AF',
-    fontSize: 13,
-    marginTop: 2,
   },
 });
