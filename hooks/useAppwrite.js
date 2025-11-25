@@ -1,11 +1,6 @@
 // hooks/useAppwrite.js
 import { useState, useEffect } from 'react';
 
-/**
- * Custom hook for fetching data from Appwrite/Supabase
- * @param {Function} fetchFunction - The async function to fetch data
- * @returns {Object} - { data, isLoading, error, refetch }
- */
 export const useAppwrite = (fetchFunction) => {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +25,6 @@ export const useAppwrite = (fetchFunction) => {
     fetchData();
   }, []);
 
-  // Refetch function for manual refresh
   const refetch = async () => {
     await fetchData();
   };

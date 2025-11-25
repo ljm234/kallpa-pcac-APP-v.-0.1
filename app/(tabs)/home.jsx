@@ -7,16 +7,17 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SearchInput from '../../components/SearchInput';
-import Trending from '../../components/Trending';
+import TrendingHorizontal from '../../components/TrendingHorizontal';
 import VideoCard from '../../components/VideoCard';
 import EmptyState from '../../components/EmptyState';
 import { useGlobalContext } from '../../context/GlobalProvider';
 import { useAppwrite } from '../../hooks/useAppwrite';
-import { getAllPosts } from '../../lib/appwrite';
+import { getAllPosts, getLatestPosts } from '../../lib/appwrite';
 
 const getAccentFromName = (name) => {
   if (!name) {
@@ -40,12 +41,13 @@ const getAccentFromName = (name) => {
 
 const Home = () => {
   const { user } = useGlobalContext();
-
-  // Use the custom hook for fetching posts
   const { data: posts, isLoading, refetch } = useAppwrite(getAllPosts);
+  const { data: trendingPosts } = useAppwrite(getLatestPosts);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // single authoritative playing video id — ensures only one video plays at a time
+  const [playingVideoId, setPlayingVideoId] = useState(null);
 
   const username = useMemo(() => {
     const metaName = user?.user_metadata?.username;
@@ -59,7 +61,6 @@ const Home = () => {
 
   const accent = useMemo(() => getAccentFromName(username), [username]);
 
-  // Handle pull-to-refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -84,39 +85,33 @@ const Home = () => {
     console.log('Searching videos for:', searchQuery);
   };
 
-  // Track which videos are playing
-  const [playingVideos, setPlayingVideos] = useState({});
-
-  const handleVideoPress = (isPlaying, videoId) => {
-    setPlayingVideos((prev) => ({
-      ...prev,
-      [videoId]: isPlaying,
-    }));
+  const handleVideoPress = (nextPlaying, videoId) => {
+    // If child reports it is starting playback, set this as the single active id;
+    // otherwise clear it.
+    if (nextPlaying) {
+      setPlayingVideoId(videoId);
+    } else {
+      // Only clear if the id matches the one we have active
+      setPlayingVideoId((current) => (current === videoId ? null : current));
+    }
   };
 
   const renderPostCard = ({ item }) => (
     <VideoCard
       video={item}
       compact={false}
+      isPlaying={playingVideoId === item.id}
       onPress={handleVideoPress}
     />
   );
 
-  // Top "Trending" row (horizontal)
-  const trendingPosts = useMemo(
-    () => filteredPosts.slice(0, 5),
-    [filteredPosts]
-  );
-
   const listHeader = (
     <View style={styles.header}>
-      {/* Top row: greeting + avatar */}
       <View style={styles.headerTop}>
         <View>
-          <Text style={styles.greeting}>Welcome back,</Text>
+          <Text style={styles.greeting}>WELCOME BACK,</Text>
           <Text style={styles.username}>{username}</Text>
 
-          {/* Dynamic accent chip */}
           <View
             style={[
               styles.usernameChip,
@@ -135,14 +130,25 @@ const Home = () => {
           </View>
         </View>
 
-        {/* Initials avatar with accent border */}
-        <View
-          style={[
-            styles.logoWrapper,
-            { borderColor: accent.solid },
-          ]}
-        >
-          <Text style={[styles.logoText, { color: accent.solid }]}>JM</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={handleRefresh}
+            style={[styles.refreshButton, { borderColor: accent.solid }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.refreshIcon, { color: accent.solid }]}>
+              {isRefreshing ? '⟳' : '↻'}
+            </Text>
+          </TouchableOpacity>
+
+          <View
+            style={[
+              styles.logoWrapper,
+              { borderColor: accent.solid },
+            ]}
+          >
+            <Text style={[styles.logoText, { color: accent.solid }]}>JM</Text>
+          </View>
         </View>
       </View>
 
@@ -156,10 +162,12 @@ const Home = () => {
         onSubmit={handleSearch}
       />
 
-      {/* Horizontal Trending row */}
-      <Trending posts={trendingPosts} onVideoPress={handleVideoPress} />
+      <TrendingHorizontal
+        posts={trendingPosts}
+        onVideoPress={handleVideoPress}
+        playingVideoId={playingVideoId}
+      />
 
-      {/* Only show "Latest videos" when we have data */}
       {filteredPosts.length > 0 && (
         <Text style={styles.sectionTitle}>Latest Videos</Text>
       )}
@@ -208,7 +216,7 @@ export default Home;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617', // slate-950
+    backgroundColor: '#020617',
   },
   listContent: {
     paddingHorizontal: 20,
@@ -263,6 +271,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     letterSpacing: 0.5,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: '#020617',
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  refreshIcon: {
+    fontSize: 20,
+    fontWeight: '700',
   },
   logoWrapper: {
     width: 46,
