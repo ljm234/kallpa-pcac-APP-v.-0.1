@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Video, ResizeMode } from "expo-av";
-import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import { uploadFile, createVideo } from "../../lib/appwrite";
@@ -41,20 +41,74 @@ function Create() {
   const videoRef = React.useRef(null);
 
   /**
-   * Open file picker for video or image selection
+   * Open image picker for video or image selection from gallery
    * @param {string} selectType - 'video' or 'image'
    */
   const openPicker = async (selectType) => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: selectType === "image" 
-          ? ["image/png", "image/jpg", "image/jpeg"]
-          : ["video/mp4", "video/gif", "video/mov"],
-        copyToCacheDirectory: true,
+      // Request permissions for media library access
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (!permissionResult.granted) {
+        Alert.alert(
+          "Permission Required",
+          "Please allow access to your photo library to select media."
+        );
+        return;
+      }
+
+      // Launch image picker with appropriate media type
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: selectType === "image" 
+          ? ImagePicker.MediaTypeOptions.Images 
+          : ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: true,
+        aspect: selectType === "image" ? [16, 9] : undefined,
+        quality: 1,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
+        const pickedAsset = result.assets[0];
+        
+        // Validate file size (50 MB limit)
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB in bytes
+        
+        if (pickedAsset.fileSize && pickedAsset.fileSize > MAX_FILE_SIZE) {
+          Alert.alert(
+            "File Too Large",
+            `The selected ${selectType} is too large. Please select a file smaller than 50 MB.`
+          );
+          return;
+        }
+
+        // Extract file name from URI
+        const uriParts = pickedAsset.uri.split('/');
+        const fileName = uriParts[uriParts.length - 1];
+        
+        // Determine MIME type
+        let mimeType;
+        if (selectType === "image") {
+          mimeType = pickedAsset.mimeType || "image/jpeg";
+        } else {
+          mimeType = pickedAsset.mimeType || "video/mp4";
+        }
+
+        // Construct asset object in required format
+        const asset = {
+          name: fileName,
+          type: mimeType,
+          size: pickedAsset.fileSize || 0,
+          uri: pickedAsset.uri,
+          mimeType: mimeType,
+        };
+
+        // Log file properties for debugging
+        console.log(`📁 Selected ${selectType} properties:`, {
+          name: asset.name,
+          type: asset.type,
+          size: `${(asset.size / (1024 * 1024)).toFixed(2)} MB`,
+          uri: asset.uri,
+        });
         
         if (selectType === "image") {
           setForm({
@@ -69,6 +123,7 @@ function Create() {
         }
       }
     } catch (error) {
+      console.error(`Error picking ${selectType}:`, error);
       Alert.alert("Error", `Failed to pick ${selectType}: ${error.message}`);
     }
   };
@@ -108,26 +163,61 @@ function Create() {
       return Alert.alert("Error", "You must be logged in to upload videos");
     }
 
+    // Additional file validation before upload
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
+    if (form.video.size > MAX_FILE_SIZE) {
+      return Alert.alert(
+        "File Too Large",
+        `Video file is ${(form.video.size / (1024 * 1024)).toFixed(2)} MB. Maximum allowed size is 50 MB.`
+      );
+    }
+
+    if (form.thumbnail.size > MAX_FILE_SIZE) {
+      return Alert.alert(
+        "File Too Large",
+        `Thumbnail file is ${(form.thumbnail.size / (1024 * 1024)).toFixed(2)} MB. Maximum allowed size is 50 MB.`
+      );
+    }
+
+    // Log file properties before upload
+    console.log("📤 Starting upload process...");
+    console.log("Video file properties:", {
+      name: form.video.name,
+      type: form.video.type,
+      size: form.video.size,
+      uri: form.video.uri,
+    });
+    console.log("Thumbnail file properties:", {
+      name: form.thumbnail.name,
+      type: form.thumbnail.type,
+      size: form.thumbnail.size,
+      uri: form.thumbnail.uri,
+    });
+
     setUploading(true);
 
     try {
       // Upload video file to storage
-      console.log("Uploading video...");
+      console.log("📹 Uploading video to storage...");
       const videoUrl = await uploadFile(form.video, "video");
+      console.log("✅ Video uploaded successfully:", videoUrl);
 
       // Upload thumbnail file to storage
-      console.log("Uploading thumbnail...");
+      console.log("🖼️ Uploading thumbnail to storage...");
       const thumbnailUrl = await uploadFile(form.thumbnail, "image");
+      console.log("✅ Thumbnail uploaded successfully:", thumbnailUrl);
 
       // Create video record in database
-      console.log("Creating video record...");
-      await createVideo({
+      console.log("💾 Creating video record in database...");
+      const newPost = await createVideo({
         title: form.title,
         videoUrl,
         thumbnailUrl,
         prompt: form.prompt,
         creator: user.id,
       });
+      console.log("✅ Video post created successfully:", newPost);
 
       // Show success alert FIRST (before clearing form)
       if (Platform.OS === 'web') {
