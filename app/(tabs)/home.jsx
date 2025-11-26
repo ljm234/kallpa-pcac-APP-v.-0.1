@@ -1,5 +1,5 @@
 // app/(tabs)/home.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -48,6 +48,35 @@ const Home = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   // single authoritative playing video id — ensures only one video plays at a time
   const [playingVideoId, setPlayingVideoId] = useState(null);
+
+  // Viewability tracking for the vertical Latest list — used to auto-pause
+  // any playing video when it scrolls out of view.
+  const latestListRef = useRef(null);
+  const latestVisibleIdsRef = useRef(new Set());
+  const latestViewabilityConfig = { itemVisiblePercentThreshold: 30, minimumViewTime: 50 };
+  const latestOnViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (!playingVideoId || !Array.isArray(viewableItems)) return;
+
+    const visibleIds = new Set(
+      viewableItems
+        .map((v) => (v?.item?.id ?? v?.key))
+        .filter((id) => id != null)
+        .map((id) => String(id))
+    );
+    latestVisibleIdsRef.current = visibleIds;
+
+    if (!visibleIds.has(String(playingVideoId))) {
+      // Current playing card is no longer visible — pause it.
+      handleVideoPress(false, playingVideoId);
+    }
+  }).current;
+  const latestEnsurePauseIfOutOfView = () => {
+    if (!playingVideoId) return;
+    const setRef = latestVisibleIdsRef.current || new Set();
+    if (!setRef.has(String(playingVideoId))) {
+      handleVideoPress(false, playingVideoId);
+    }
+  };
 
   const username = useMemo(() => {
     const metaName = user?.user_metadata?.username;
@@ -187,6 +216,7 @@ const Home = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
+        ref={latestListRef}
         data={filteredPosts}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderPostCard}
@@ -199,6 +229,14 @@ const Home = () => {
         }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        viewabilityConfig={latestViewabilityConfig}
+        onViewableItemsChanged={latestOnViewableItemsChanged}
+        onScrollBeginDrag={() => {
+          // As soon as user starts scrolling the Latest list, stop any playing video
+          if (playingVideoId) handleVideoPress(false, playingVideoId);
+        }}
+        onScrollEndDrag={latestEnsurePauseIfOutOfView}
+        onMomentumScrollEnd={latestEnsurePauseIfOutOfView}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}

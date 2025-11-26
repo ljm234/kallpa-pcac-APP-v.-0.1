@@ -1,30 +1,30 @@
 // app/(tabs)/_layout.jsx
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text } from 'react-native';
+import { View, Image } from 'react-native';
+import icons from '../../constants/icons';
 
-// Simple text-only tab icon used for all tabs
-const SimpleTabIcon = ({ label, color, focused }) => {
+// Tab icon component with image icons
+const TabIcon = ({ icon, color, name, focused }) => {
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+      <Image
+        source={icon}
+        resizeMode="contain"
+        style={{
+          width: 24,
+          height: 24,
+          tintColor: color,
+        }}
+      />
       <View
         style={{
           width: 6,
           height: 6,
           borderRadius: 999,
-          marginBottom: 4,
           backgroundColor: focused ? color : 'transparent',
         }}
       />
-      <Text
-        style={{
-          fontSize: 12,
-          color,
-          fontWeight: focused ? '600' : '400',
-        }}
-      >
-        {label}
-      </Text>
     </View>
   );
 };
@@ -34,12 +34,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#6b7280',
+        tabBarActiveTintColor: '#FF9C01',
+        tabBarInactiveTintColor: '#CDCDE0',
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: '#020617',
-          borderTopColor: '#1f2937',
+          backgroundColor: '#161622',
+          borderTopWidth: 1,
+          borderTopColor: '#232533',
+          height: 84,
         },
       }}
     >
@@ -48,7 +50,12 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <SimpleTabIcon label="Home" color={color} focused={focused} />
+            <TabIcon
+              icon={icons.home}
+              color={color}
+              name="Home"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -57,7 +64,12 @@ export default function TabsLayout() {
         options={{
           title: 'Bookmark',
           tabBarIcon: ({ color, focused }) => (
-            <SimpleTabIcon label="Bookmark" color={color} focused={focused} />
+            <TabIcon
+              icon={icons.bookmark}
+              color={color}
+              name="Bookmark"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -66,7 +78,12 @@ export default function TabsLayout() {
         options={{
           title: 'Create',
           tabBarIcon: ({ color, focused }) => (
-            <SimpleTabIcon label="Create" color={color} focused={focused} />
+            <TabIcon
+              icon={icons.plus}
+              color={color}
+              name="Create"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -75,7 +92,12 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <SimpleTabIcon label="Profile" color={color} focused={focused} />
+            <TabIcon
+              icon={icons.profile}
+              color={color}
+              name="Profile"
+              focused={focused}
+            />
           ),
         }}
       />

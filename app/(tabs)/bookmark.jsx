@@ -1,6 +1,7 @@
 // app/(tabs)/bookmark.jsx
 import React from "react";
-import { SafeAreaView, View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function Bookmark() {
   return (

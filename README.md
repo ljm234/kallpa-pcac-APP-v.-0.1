@@ -70,3 +70,49 @@ export default function Home() {
   );
 }
 ```
+
+## Trending & Premium Video Features
+
+This project includes an enhanced Trending Videos implementation designed to meet advanced UX and performance standards:
+
+### Fetching
+- `getLatestPosts(limit)` selects only required columns for efficiency.
+- Graceful fallback to `getAllPosts` ensures the UI always has content.
+
+### Responsive Layout
+- Card width scales with orientation and screen size (portrait ~70% width, landscape/tablet clamp).
+- Consistent 16:9 aspect ratio for video areas.
+
+### Loading Experience
+- Shimmer skeleton placeholders (`VideoSkeleton`) while data loads.
+
+### Playback UX
+- Interaction-gated autoplay avoids browser autoplay policy conflicts.
+- Inline progress bar with smooth updates.
+- Mute / Unmute toggle works across web/native.
+- Fullscreen button (HTML5 `requestFullscreen` on web; `presentFullscreenPlayer` when supported on native).
+- Double-tap zone skipping (left/right) with chain behavior for fast scrubbing.
+
+### Animation
+- Active card uses a subtle scale loop with easing (replaces aggressive pulse) for a premium feel.
+
+### Accessibility & Polish
+- Buttons include `accessibilityLabel` text.
+- Reduced logging noise; easy to route to a debug logger if desired.
+
+### Performance
+- FlatList optimization using `getItemLayout`.
+- Smaller data payload by limiting selected columns in Supabase query.
+
+### Suggested Commit Messages
+1. `feat(trending): responsive metrics + skeleton loading`
+2. `feat(video): fullscreen + mute + progress bar overlays`
+3. `perf(fetch): optimize getLatestPosts select columns`
+4. `docs: add premium trending architecture section`
+
+### Next Ideas (Optional Enhancements)
+- Global playback manager to ensure only one video plays across all lists.
+- Thumbnail prefetch & blurred preview while buffering.
+- Analytics events for play, pause, skip, fullscreen, completion.
+- Unit tests for autoplay gating and progress calculations.
+

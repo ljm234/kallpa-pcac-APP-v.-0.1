@@ -1,12 +1,12 @@
 // app/(auth)/sign-in.jsx
 import React, { useState } from 'react';
 import {
-  SafeAreaView,
   View,
   Text,
   Alert,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, Redirect, useRouter } from 'expo-router';
 
 import FormField from '../../components/FormField';
@@ -32,17 +32,54 @@ const SignIn = () => {
     setValidationError('');
   };
 
+  // Map Supabase Auth errors to friendlier guidance for the user.
+  const mapAuthError = (error, email) => {
+    if (!error) return 'Unexpected error. Please try again.';
+    const msg = String(error.message || '').toLowerCase();
+    if (msg.includes('invalid login credentials')) {
+      return `Email or password is incorrect. Double-check:
+- Email matches your registered account (case-insensitive)
+- Password capitalization is correct
+- No leading or trailing spaces
+
+If forgotten, create a new account or perform a password reset in Supabase.`;
+    }
+    if (msg.includes('email not confirmed')) {
+      return 'Please confirm your email first. Check your inbox (and spam folder) for the verification link.';
+    }
+    if (msg.includes('too many requests')) {
+      return 'Too many attempts. Wait a minute and try again.';
+    }
+    if (msg.includes('network')) {
+      return 'Network error. Ensure you are online and tunnel is connected.';
+    }
+    return error.message || 'Unexpected error while signing you in.';
+  };
+
+  const [attempts, setAttempts] = useState(0);
+
   const handleSignIn = async () => {
     if (isSubmitting) return;
 
-    const email = form.email.trim();
+    const rawEmail = form.email.trim();
+    const email = rawEmail.toLowerCase();
     const password = form.password;
 
-    // EMPTY-FIELDS CHECK
+    // Basic validations
     if (!email || !password) {
       const msg = 'Please fill in email and password.';
       setValidationError(msg);
       Alert.alert('Missing information', msg);
+      return;
+    }
+    if (password.length < 6) {
+      const msg = 'Password must be at least 6 characters.';
+      setValidationError(msg);
+      Alert.alert('Invalid password', msg);
+      return;
+    }
+    if (attempts >= 8) {
+      Alert.alert('Too many attempts', 'Please wait a minute before trying again.');
       return;
     }
 
@@ -50,23 +87,18 @@ const SignIn = () => {
 
     try {
       const { user } = await signIn({ email, password });
-
       setUser(user);
       setIsLoggedIn(true);
+      setAttempts(0);
 
       Alert.alert('Signed in', 'Welcome back to JM Labs!', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)/home'),
-        },
+        { text: 'OK', onPress: () => router.replace('/(tabs)/home') },
       ]);
     } catch (error) {
-      console.error('Sign in failed', error);
-      Alert.alert(
-        'Sign in failed',
-        error?.message ??
-          'Unexpected error while signing you in.'
-      );
+      setAttempts((a) => a + 1);
+      const friendly = mapAuthError(error, email);
+      console.error('Sign in failed:', error);
+      Alert.alert('Sign in failed', friendly);
     } finally {
       setIsSubmitting(false);
     }

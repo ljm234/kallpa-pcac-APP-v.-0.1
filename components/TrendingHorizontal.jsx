@@ -75,7 +75,9 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
     }, 100);
   }, [looped, initialized]);
 
-  // Auto-scroll through videos (work on looped data)
+  // Auto-scroll through videos (work on looped data) - DISABLED to prevent infinite loop
+  // User can manually swipe through videos instead
+  /*
   useEffect(() => {
     if (!looped || looped.length <= 1 || !initialized) return;
 
@@ -125,6 +127,7 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
 
     return () => clearInterval(interval);
   }, [looped, activeVideoId, initialized, isInteracting]);
+  */
   
 
   if (!postsToUse || postsToUse.length === 0) {
@@ -137,21 +140,44 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
   );
 
   // Use viewability to determine which item is centered/visible.
-  const viewabilityConfig = { itemVisiblePercentThreshold: 60 };
+  const viewabilityConfig = { itemVisiblePercentThreshold: 30, minimumViewTime: 50 };
 
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (!viewableItems || viewableItems.length === 0) return;
+
+    // Build a set of visible IDs to pause current video if it leaves view
+    const visibleIds = new Set(
+      viewableItems
+        .map((v) => (v?.item?.id ?? v?.key))
+        .filter((id) => id != null)
+        .map((id) => String(id))
+    );
+
+    if (playingVideoId && !visibleIds.has(String(playingVideoId))) {
+      if (onVideoPress) onVideoPress(false, playingVideoId);
+    }
 
     const first = viewableItems[0];
     const idx = first.index;
     if (idx == null) return;
 
+    // BONUS: Auto-pause if playing video scrolls out of view
+    if (playingVideoId && looped[idx]?.id !== playingVideoId) {
+      console.log('[TrendingHorizontal] Playing video scrolled away, auto-pausing');
+      if (onVideoPress) {
+        onVideoPress(false, playingVideoId); // notify parent to pause
+      }
+    }
+
     // handle fake edges by animating to the real item (smoother)
     if (idx <= 0) {
       const lastRealIndex = looped.length - 2;
       try {
-        flatListRef.current.scrollToOffset({ offset: centerOffset(lastRealIndex), animated: true });
+        flatListRef.current.scrollToOffset({ offset: centerOffset(lastRealIndex), animated: false });
         setActiveVideoId(looped[lastRealIndex].id);
+        if (playingVideoId && looped[lastRealIndex]?.id !== playingVideoId && onVideoPress) {
+          onVideoPress(false, playingVideoId);
+        }
       } catch (e) {
         console.log('viewability adjust error:', e);
       }
@@ -160,8 +186,11 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
 
     if (idx >= looped.length - 1) {
       try {
-        flatListRef.current.scrollToOffset({ offset: centerOffset(1), animated: true });
+        flatListRef.current.scrollToOffset({ offset: centerOffset(1), animated: false });
         setActiveVideoId(looped[1].id);
+        if (playingVideoId && looped[1]?.id !== playingVideoId && onVideoPress) {
+          onVideoPress(false, playingVideoId);
+        }
       } catch (e) {
         console.log('viewability adjust error:', e);
       }
@@ -169,6 +198,9 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
     }
 
     setActiveVideoId(looped[idx].id);
+    if (playingVideoId && looped[idx]?.id !== playingVideoId && onVideoPress) {
+      onVideoPress(false, playingVideoId);
+    }
 
     // No requested-playing flow — nothing to do here.
   }).current;
@@ -182,15 +214,18 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
   // compute the index based on contentOffset (we use ITEM_WIDTH steps).
   // contentOffset already measures from the start of the padded content so
   // the index is simply contentOffsetX / ITEM_WIDTH (round to nearest).
-  const computedIndex = Math.round(contentOffsetX / ITEM_WIDTH);
+  const computedIndex = Math.floor((contentOffsetX + ITEM_WIDTH / 2) / ITEM_WIDTH);
   let loopIndex = computedIndex;
-  console.log('[TrendingHorizontal][momentum] contentOffsetX=', contentOffsetX, 'computedIndex=', computedIndex, 'loopedLen=', looped.length);
 
     if (loopIndex <= 0) {
       const lastRealIndex = looped.length - 2;
       try {
-        flatListRef.current.scrollToOffset({ offset: centerOffset(lastRealIndex), animated: true });
+        flatListRef.current.scrollToOffset({ offset: centerOffset(lastRealIndex), animated: false });
         setActiveVideoId(looped[lastRealIndex].id);
+        // Auto-pause if we scrolled away from playing video
+        if (playingVideoId && looped[lastRealIndex]?.id !== playingVideoId && onVideoPress) {
+          onVideoPress(false, playingVideoId);
+        }
       } catch (e) {
         console.log('scroll adjust error:', e);
       }
@@ -199,8 +234,12 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
 
     if (loopIndex >= looped.length - 1) {
       try {
-        flatListRef.current.scrollToOffset({ offset: centerOffset(1), animated: true });
+        flatListRef.current.scrollToOffset({ offset: centerOffset(1), animated: false });
         setActiveVideoId(looped[1].id);
+        // Auto-pause if we scrolled away from playing video
+        if (playingVideoId && looped[1]?.id !== playingVideoId && onVideoPress) {
+          onVideoPress(false, playingVideoId);
+        }
       } catch (e) {
         console.log('scroll adjust error:', e);
       }
@@ -208,13 +247,63 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
     }
 
     setActiveVideoId(looped[loopIndex].id);
-    console.log('[TrendingHorizontal] Centered on video (looped):', looped[loopIndex].id);
+    
+    // Auto-pause if we scrolled away from playing video
+    if (playingVideoId && looped[loopIndex]?.id !== playingVideoId && onVideoPress) {
+      onVideoPress(false, playingVideoId);
+    }
+    
     // Scrolling/momentum finished — user is no longer interacting.
     setIsInteracting(false);
   };
 
+  // Some devices/users perform short drags that end without a long momentum
+  // phase; mirror the same edge-wrap and auto-pause logic here so the
+  // carousel always loops in both directions during manual swipes.
+  const onScrollEndDrag = (event) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    if (!looped || looped.length === 0) return;
+
+    const computedIndex = Math.floor((contentOffsetX + ITEM_WIDTH / 2) / ITEM_WIDTH);
+    let loopIndex = computedIndex;
+
+    if (loopIndex <= 0) {
+      const lastRealIndex = looped.length - 2;
+      try {
+        flatListRef.current.scrollToOffset({ offset: centerOffset(lastRealIndex), animated: false });
+        setActiveVideoId(looped[lastRealIndex].id);
+        if (playingVideoId && looped[lastRealIndex]?.id !== playingVideoId && onVideoPress) {
+          onVideoPress(false, playingVideoId);
+        }
+      } catch (e) {
+        // ignore
+      }
+      return;
+    }
+
+    if (loopIndex >= looped.length - 1) {
+      try {
+        flatListRef.current.scrollToOffset({ offset: centerOffset(1), animated: false });
+        setActiveVideoId(looped[1].id);
+        if (playingVideoId && looped[1]?.id !== playingVideoId && onVideoPress) {
+          onVideoPress(false, playingVideoId);
+        }
+      } catch (e) {
+        // ignore
+      }
+      return;
+    }
+
+    // normal case: update active id and ensure auto-pause if needed
+    setActiveVideoId(looped[loopIndex].id);
+    if (playingVideoId && looped[loopIndex]?.id !== playingVideoId && onVideoPress) {
+      onVideoPress(false, playingVideoId);
+    }
+
+    setIsInteracting(false);
+  };
+
   const handleVideoPress = (isPlaying, videoId) => {
-    console.log('[TrendingHorizontal] Video pressed:', videoId, 'playing:', isPlaying);
     setActiveVideoId(videoId);
 
     // Per user request: do NOT scroll the carousel when tapping play — keep
@@ -247,22 +336,14 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
       outputRange: [0.6, 1, 0.6],
     });
 
-    // If this item is the active/centered item or it's the one requested to
-    // play, force the visual to the "centered" look so starting playback
-    // doesn't cause a flicker or shrink. This keeps the card visually
-    // stable while playback starts.
-  const isCentered = isActive || playingVideoId === item.id;
-    const scale = isCentered ? 1.1 : interpScale;
-    const opacity = isCentered ? 1 : interpOpacity;
-
     return (
       <Animated.View
         style={[
           {
             width: CARD_WIDTH,
             marginHorizontal: CARD_MARGIN / 2,
-            transform: [{ scale }],
-            opacity,
+            transform: [{ scale: interpScale }],
+            opacity: interpOpacity,
           },
         ]}
       >
@@ -301,7 +382,8 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
         decelerationRate={0.9}
         scrollEventThrottle={16}
         onScroll={handleScroll}
-        onMomentumScrollEnd={onMomentumScrollEnd}
+  onMomentumScrollEnd={onMomentumScrollEnd}
+  onScrollEndDrag={onScrollEndDrag}
   contentContainerStyle={[styles.listContent, { paddingHorizontal: CENTER_PADDING }]}
         onLayout={() => {
           // Ensure we are scrolled to the active item after layout to avoid
@@ -316,9 +398,8 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
             // ignore
           }
         }}
-  // Disable manual scrolling while a video is actively playing so the
-  // centered (playing) card doesn't move unexpectedly.
-  scrollEnabled={!Boolean(playingVideoId)}
+  // Allow scrolling even when video is playing - auto-pause will handle it
+  scrollEnabled={true}
         pagingEnabled={false}
         getItemLayout={(data, index) => ({
           length: ITEM_WIDTH,
@@ -327,7 +408,13 @@ const TrendingHorizontal = ({ posts, onVideoPress, playingVideoId = null }) => {
         })}
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
-          onScrollBeginDrag={() => setIsInteracting(true)}
+          onScrollBeginDrag={() => {
+            setIsInteracting(true);
+            if (playingVideoId && onVideoPress) {
+              // Pause immediately on swipe so user isn't blocked by playback
+              onVideoPress(false, playingVideoId);
+            }
+          }}
           // Keep `isInteracting` true for the whole scroll/momentum lifecycle.
           // Do NOT set `isInteracting` on touch start — that caused single taps
           // to be treated as interactions and made buttons ignore taps.

@@ -10,11 +10,23 @@ import {
 } from 'react-native';
 import { Video } from 'expo-av';
 
-const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting = false }) => {
+const VideoCard = ({
+  video,
+  compact = false,
+  isPlaying,
+  onPress,
+  isInteracting = false,
+  forcedHeight,
+  allowFullscreen = false,
+  allowMuteToggle = false,
+  showProgress = false,
+}) => {
   const videoRef = useRef(null);
   const [internalPlaying, setInternalPlaying] = useState(false);
   // Track measured width of the tappable video area so zone math is accurate on web & native
   const [areaWidth, setAreaWidth] = useState(null);
+  const [muted, setMuted] = useState(false);
+  const [progress, setProgress] = useState(0); // 0..1
 
   if (!video) return null;
 
@@ -69,7 +81,6 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
 
   const handleToggle = async () => {
     const next = !playing;
-    console.log(`[VideoCard] Toggle video ${video.id}, playing: ${playing} -> ${next}`);
 
     // Local state if parent is not controlling us
     if (typeof isPlaying !== 'boolean') {
@@ -161,6 +172,8 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
       tapStateRef.current.lastTime = now;
   await performSkip(zone === 'left' ? -SKIP_SECONDS : SKIP_SECONDS);
     } else {
+
+      
       // Chain expired; re-arm
       tapStateRef.current = { zone, lastTime: now, chainActive: false };
       console.log(zone === 'left' ? '⏪ chain expired (arm again)' : '⏩ chain expired (arm again)');
@@ -186,6 +199,11 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
     // controller (i.e., `isPlaying` prop is provided). If the component is
     // managing local playback (`isPlaying` is undefined), just update local
     // internal state and do not call the parent handler to avoid races.
+    if (showProgress && status.durationMillis && status.positionMillis >= 0) {
+      const pct = Math.min(1, status.positionMillis / status.durationMillis);
+      setProgress(pct);
+    }
+
     if (typeof status.isPlaying === 'boolean') {
       const nowPlaying = status.isPlaying;
       if (typeof isPlaying === 'boolean') {
@@ -201,14 +219,45 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
     }
   };
 
+  const toggleMute = () => {
+    setMuted((m) => !m);
+    const ref = videoRef.current;
+    if (!ref) return;
+    try {
+      if (Platform.OS === 'web') {
+        ref.muted = !muted;
+      } else {
+        ref.setIsMutedAsync(!muted);
+      }
+    } catch (e) {
+      console.log('Mute toggle error:', e);
+    }
+  };
+
+  const enterFullscreen = async () => {
+    const ref = videoRef.current;
+    if (!ref) return;
+    try {
+      if (Platform.OS === 'web') {
+        if (ref.requestFullscreen) {
+          await ref.requestFullscreen();
+        }
+      } else if (ref.presentFullscreenPlayer) {
+        await ref.presentFullscreenPlayer();
+      }
+    } catch (e) {
+      console.log('Fullscreen error:', e);
+    }
+  };
+
   return (
     // Use a non-touchable wrapper so horizontal swipes on the card are handled by FlatList.
-    <View style={[styles.card, compact && styles.cardCompact]}>
+    <View style={[styles.card, compact && styles.cardCompact]}>      
       <TouchableOpacity
         activeOpacity={1.0}
         onPress={handleVideoTap}
         onLayout={(e) => setAreaWidth(e.nativeEvent.layout.width)}
-        style={[styles.videoArea, compact && styles.videoAreaCompact]}
+        style={[styles.videoArea, compact && styles.videoAreaCompact, forcedHeight ? { height: forcedHeight } : null]}
       >
         {video.videoUrl ? (
           // On web expo-av can be unreliable; render a native <video>
@@ -219,6 +268,7 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
               src={video.videoUrl}
               style={StyleSheet.flatten([styles.video, { display: 'block', touchAction: 'none', userSelect: 'none' }])}
               playsInline
+              muted={muted}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -244,10 +294,12 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
               resizeMode="cover"
               shouldPlay={playing}
               isLooping={false}
-              isMuted={false}
-              useNativeControls={false}
+              isMuted={muted}
+              useNativeControls={true}
               progressUpdateIntervalMillis={1000}
               onPlaybackStatusUpdate={handlePlaybackStatus}
+              posterSource={video.thumbnailUrl ? { uri: video.thumbnailUrl } : undefined}
+              usePoster={!playing}
             />
           )
         ) : video.thumbnailUrl ? (
@@ -255,6 +307,8 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
             source={{ uri: video.thumbnailUrl }}
             style={styles.video}
             resizeMode="cover"
+            defaultSource={require('../assets/icon.png')}
+            fadeDuration={0}
           />
         ) : (
           <View style={styles.thumbnailFallback}>
@@ -262,12 +316,32 @@ const VideoCard = ({ video, compact = false, isPlaying, onPress, isInteracting =
           </View>
         )}
 
-        {/* Play / pause button overlay - only show when paused */}
+        {/* Overlays */}
         {!playing && (
           <View style={styles.playButtonOverlay} pointerEvents="none">
             <View style={styles.playButtonTouchable}>
               <Text style={styles.playIcon}>▶</Text>
             </View>
+          </View>
+        )}
+        {showProgress && playing && (
+          <View style={styles.progressBarWrapper} pointerEvents="none">
+            <View style={styles.progressTrack} />
+            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+          </View>
+        )}
+        {(allowMuteToggle || allowFullscreen) && (
+          <View style={styles.controlsOverlay} pointerEvents="box-none">
+            {allowMuteToggle && (
+              <TouchableOpacity accessibilityLabel={muted ? 'Unmute video' : 'Mute video'} onPress={toggleMute} style={styles.smallControlBtn}>
+                <Text style={styles.smallControlText}>{muted ? '🔇' : '🔊'}</Text>
+              </TouchableOpacity>
+            )}
+            {allowFullscreen && (
+              <TouchableOpacity accessibilityLabel="Fullscreen video" onPress={enterFullscreen} style={styles.smallControlBtn}>
+                <Text style={styles.smallControlText}>⛶</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </TouchableOpacity>
@@ -300,6 +374,12 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
     width: '100%',
+    // Professional shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8, // Android shadow
   },
   cardCompact: {
     width: 220,
@@ -313,10 +393,39 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    // Inner shadow for video area
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
   videoAreaCompact: {
     // slightly larger compact height for a more premium feel
     height: 140,
+  },
+  progressBarWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 6,
+    justifyContent: 'center',
+  },
+  progressTrack: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: '#374151',
+    borderRadius: 2,
+  },
+  progressFill: {
+    position: 'absolute',
+    left: 0,
+    height: 2,
+    backgroundColor: '#F97316',
+    borderRadius: 2,
   },
   video: {
     position: 'absolute',
@@ -361,6 +470,24 @@ const styles = StyleSheet.create({
     color: '#F97316',
     fontSize: 24,
     fontWeight: '700',
+  },
+  controlsOverlay: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  smallControlBtn: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  smallControlText: {
+    color: '#F9FAFB',
+    fontSize: 14,
+    fontWeight: '600',
   },
   thumbnailFallback: {
     flex: 1,
