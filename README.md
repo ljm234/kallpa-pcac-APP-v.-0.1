@@ -116,3 +116,173 @@ This project includes an enhanced Trending Videos implementation designed to mee
 - Analytics events for play, pause, skip, fullscreen, completion.
 - Unit tests for autoplay gating and progress calculations.
 
+## Video Upload Feature
+
+This project includes a production-grade video upload system allowing users to create and publish video content with thumbnails and metadata.
+
+### Features Implemented
+- **File Selection**: Video and image picker using `expo-document-picker`
+- **Dual Upload**: Separate uploads for video files and thumbnail images
+- **Metadata Capture**: Video title and AI prompt fields
+- **Form Validation**: Comprehensive validation ensuring all required fields are filled
+- **Loading States**: Visual feedback during upload process
+- **Error Handling**: User-friendly error messages for failed uploads
+- **Auto-Redirect**: Automatic navigation to home page after successful upload
+- **Preview**: Real-time preview of selected video and thumbnail before upload
+
+### Setup Requirements
+
+Before using the video upload feature, you must configure Supabase Storage:
+
+#### 1. Create Storage Buckets
+
+Go to your Supabase Dashboard → Storage → Create Bucket and create:
+
+1. **Bucket name**: `videos`
+   - **Public**:YES (make public)
+   - **File size limit**: 50MB recommended
+   - **Allowed MIME types**: `video/mp4`, `video/quicktime`, `video/gif`
+
+2. **Bucket name**: `images`
+   - **Public**: YES (make public)
+   - **File size limit**: 5MB recommended
+   - **Allowed MIME types**: `image/jpeg`, `image/png`, `image/jpg`
+
+#### 2. Set Bucket Policies
+
+For both buckets, configure these RLS (Row Level Security) policies:
+
+**INSERT Policy** (Allow authenticated users to upload):
+```sql
+CREATE POLICY "Allow authenticated users to upload"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id IN ('videos', 'images'));
+```
+
+**SELECT Policy** (Allow public read access):
+```sql
+CREATE POLICY "Allow public read access"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id IN ('videos', 'images'));
+```
+
+#### 3. Verify Videos Table Schema
+
+Ensure your `videos` table has these columns:
+```sql
+CREATE TABLE videos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL,
+  video_url TEXT NOT NULL,
+  thumbnail TEXT,
+  prompt TEXT,
+  creator UUID REFERENCES auth.users(id),
+  author TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Usage
+
+1. **Navigate to Create Tab**: Tap the ➕ icon in the bottom tab bar
+2. **Fill in Details**:
+   - Enter a catchy video title
+   - Tap "Choose a video to upload" and select your video file
+   - Tap "Choose a thumbnail" and select a thumbnail image
+   - Enter the AI prompt you used to create the video
+3. **Submit**: Tap "Submit & Publish" to upload
+4. **Success**: After upload, you'll be redirected to Home where your video appears
+
+### Code Architecture
+
+#### Upload Functions (`lib/appwrite.js`)
+
+**`uploadFile(file, type)`**
+- Uploads video or image files to Supabase Storage
+- Generates unique filenames with timestamps
+- Returns public URL of uploaded file
+- Handles both web and native file URIs
+
+**`createVideo(videoData)`**
+- Creates video record in database
+- Associates video with authenticated user
+- Auto-populates author name from user metadata
+- Returns formatted video object
+
+#### Create Screen (`app/(tabs)/create.jsx`)
+
+**State Management**
+```javascript
+const [form, setForm] = useState({
+  title: "",      // Video title
+  video: null,    // Selected video file
+  thumbnail: null, // Selected thumbnail image
+  prompt: "",     // AI prompt
+});
+```
+
+**Key Functions**
+- `openPicker(selectType)`: Opens document picker for video/image selection
+- `submit()`: Validates form, uploads files, creates video record, redirects to home
+
+**UI Components**
+- FormField for text inputs (title, prompt)
+- TouchableOpacity for file upload areas
+- Video component for video preview
+- Image component for thumbnail preview
+- CustomButton for submit action
+- ActivityIndicator for loading state
+
+### Error Handling
+
+The upload system handles these error scenarios:
+
+1. **Missing Fields**: Alert prompts user to fill all required fields
+2. **Not Authenticated**: Alert informs user to log in
+3. **Upload Failure**: Detailed error message from Supabase
+4. **Network Issues**: Timeout and connection error handling
+5. **Invalid Files**: MIME type validation in document picker
+
+### Testing Checklist
+
+- [ ] Video file selection works
+- [ ] Thumbnail image selection works
+- [ ] Video preview displays correctly
+- [ ] Thumbnail preview displays correctly
+- [ ] Form validation shows errors for empty fields
+- [ ] Upload shows loading indicator
+- [ ] Success alert appears after upload
+- [ ] Form resets after successful upload
+- [ ] Redirect to home page works
+- [ ] Uploaded video appears on home page
+- [ ] Video plays correctly with thumbnail
+
+### Performance Optimizations
+
+- **Unique Filenames**: Timestamp + random string prevents collisions
+- **Blob Upload**: Efficient binary transfer for large files
+- **Cache Control**: 1-hour cache for uploaded files
+- **Compressed Previews**: Native components handle efficient rendering
+- **Form Reset**: Clears memory after upload completion
+
+### Platform Support
+
+- **iOS**: Full support with native video preview
+- **Android**: Full support with native video preview
+- **Web**: Full support with HTML5 video player
+- **Cross-Platform Styling**: Responsive layout adapts to screen size
+
+### Suggested Commit Message
+```
+feat(upload): production-grade video upload with dual file support
+
+- Add uploadFile() and createVideo() functions to appwrite.js
+- Implement Create screen with video/thumbnail pickers
+- Add form validation for title, video, thumbnail, prompt
+- Include loading states and error handling
+- Auto-redirect to home after successful upload
+- Update FormField to support multiline and dark theme
+- Add comprehensive documentation and setup instructions
+```

@@ -1,5 +1,5 @@
 // app/(tabs)/profile.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,14 +23,23 @@ import { getUserPosts } from '../../lib/appwrite';
 
 const Profile = () => {
   const router = useRouter();
-  const { user, logout } = useGlobalContext();
+  const { user, logout, isAuthLoading } = useGlobalContext();
   const userId = user?.id;
 
-  const { data: userPosts, isLoading, refetch } = useAppwrite(() => getUserPosts(userId));
+  const { data: userPosts, isLoading, refetch } = useAppwrite(
+    () => userId ? getUserPosts(userId) : Promise.resolve([])
+  );
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Refetch when userId becomes available
+  useEffect(() => {
+    if (userId && !isAuthLoading) {
+      refetch();
+    }
+  }, [userId, isAuthLoading]);
 
   const username = useMemo(() => {
     const metaName = user?.user_metadata?.username;
@@ -156,12 +165,25 @@ const Profile = () => {
     </View>
   );
 
-  if (isLoading && (!userPosts || userPosts.length === 0)) {
+  // Show loading while auth is initializing
+  if (isAuthLoading || (isLoading && !userPosts)) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingWrapper}>
           <ActivityIndicator size="large" color="#F97316" />
           <Text style={styles.loadingText}>Loading your profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show loading while fetching posts (but we have user data)
+  if (isLoading && (!userPosts || userPosts.length === 0)) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingWrapper}>
+          <ActivityIndicator size="large" color="#F97316" />
+          <Text style={styles.loadingText}>Loading your videos...</Text>
         </View>
       </SafeAreaView>
     );

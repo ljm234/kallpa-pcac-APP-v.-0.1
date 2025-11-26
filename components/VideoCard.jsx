@@ -30,6 +30,16 @@ const VideoCard = ({
 
   if (!video) return null;
 
+  // Debug logging to see what thumbnailUrl we're getting
+  if (!video.thumbnailUrl) {
+    console.log('VideoCard - NO THUMBNAIL for video:', {
+      id: video.id,
+      title: video.title,
+      thumbnailUrl: video.thumbnailUrl,
+      videoUrl: video.videoUrl,
+    });
+  }
+
   // If parent passes isPlaying we use that; otherwise local state
   const playing = typeof isPlaying === 'boolean' ? isPlaying : internalPlaying;
 
@@ -266,6 +276,7 @@ const VideoCard = ({
             <video
               ref={videoRef}
               src={video.videoUrl}
+              poster={video.thumbnailUrl || undefined}
               style={StyleSheet.flatten([styles.video, { display: 'block', touchAction: 'none', userSelect: 'none' }])}
               playsInline
               muted={muted}
@@ -442,6 +453,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#000',
+    objectFit: 'cover', // For web: ensures proper aspect ratio
   },
   playButtonOverlay: {
     position: 'absolute',
