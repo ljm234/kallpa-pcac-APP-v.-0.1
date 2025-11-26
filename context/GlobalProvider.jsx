@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useState,
 } from 'react';
+import { router } from 'expo-router';
 import { supabase } from '../lib/appwrite';
 
 const GlobalContext = createContext(null);
@@ -60,12 +61,31 @@ export const GlobalProvider = ({ children }) => {
     };
   }, []);
 
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.log('Logout error:', error);
+        throw error;
+      }
+      // Clear state
+      setUser(null);
+      setIsLoggedIn(false);
+      // Navigate to sign-in
+      router.replace('/sign-in');
+    } catch (err) {
+      console.log('Logout failed:', err);
+      throw err;
+    }
+  };
+
   const value = {
     user,
     isLoggedIn,
     isAuthLoading,
     setUser,
     setIsLoggedIn,
+    logout,
   };
 
   return (
