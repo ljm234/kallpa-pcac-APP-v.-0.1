@@ -1,30 +1,30 @@
 // app/(tabs)/_layout.jsx
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Image } from 'react-native';
-import icons from '../../constants/icons';
+import { View, Text } from 'react-native';
 
-// Tab icon component with image icons
-const TabIcon = ({ icon, color, name, focused }) => {
+// Tab icon component with emoji icons
+const TabIcon = ({ emoji, color, name, focused }) => {
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-      <Image
-        source={icon}
-        resizeMode="contain"
+      <Text
         style={{
-          width: 24,
-          height: 24,
-          tintColor: color,
+          fontSize: 22,
+          opacity: focused ? 1 : 0.6,
         }}
-      />
-      <View
+      >
+        {emoji}
+      </Text>
+      <Text
         style={{
-          width: 6,
-          height: 6,
-          borderRadius: 999,
-          backgroundColor: focused ? color : 'transparent',
+          color,
+          fontSize: 10,
+          fontWeight: focused ? '700' : '500',
         }}
-      />
+        numberOfLines={1}
+      >
+        {name}
+      </Text>
     </View>
   );
 };
@@ -41,7 +41,9 @@ export default function TabsLayout() {
           backgroundColor: '#161622',
           borderTopWidth: 1,
           borderTopColor: '#232533',
-          height: 84,
+          height: 65,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
       }}
     >
@@ -51,7 +53,7 @@ export default function TabsLayout() {
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              icon={icons.home}
+              emoji="🏠"
               color={color}
               name="Home"
               focused={focused}
@@ -65,7 +67,7 @@ export default function TabsLayout() {
           title: 'Bookmark',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              icon={icons.bookmark}
+              emoji="🔖"
               color={color}
               name="Bookmark"
               focused={focused}
@@ -79,7 +81,7 @@ export default function TabsLayout() {
           title: 'Create',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              icon={icons.plus}
+              emoji="➕"
               color={color}
               name="Create"
               focused={focused}
@@ -93,7 +95,7 @@ export default function TabsLayout() {
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              icon={icons.profile}
+              emoji="👤"
               color={color}
               name="Profile"
               focused={focused}

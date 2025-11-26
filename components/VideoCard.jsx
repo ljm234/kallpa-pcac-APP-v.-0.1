@@ -173,7 +173,7 @@ const VideoCard = ({
   await performSkip(zone === 'left' ? -SKIP_SECONDS : SKIP_SECONDS);
     } else {
 
-      
+
       // Chain expired; re-arm
       tapStateRef.current = { zone, lastTime: now, chainActive: false };
       console.log(zone === 'left' ? '⏪ chain expired (arm again)' : '⏩ chain expired (arm again)');
@@ -318,20 +318,20 @@ const VideoCard = ({
 
         {/* Overlays */}
         {!playing && (
-          <View style={styles.playButtonOverlay} pointerEvents="none">
+          <View style={styles.playButtonOverlay}>
             <View style={styles.playButtonTouchable}>
               <Text style={styles.playIcon}>▶</Text>
             </View>
           </View>
         )}
         {showProgress && playing && (
-          <View style={styles.progressBarWrapper} pointerEvents="none">
+          <View style={styles.progressBarWrapper}>
             <View style={styles.progressTrack} />
             <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
           </View>
         )}
         {(allowMuteToggle || allowFullscreen) && (
-          <View style={styles.controlsOverlay} pointerEvents="box-none">
+          <View style={styles.controlsOverlay}>
             {allowMuteToggle && (
               <TouchableOpacity accessibilityLabel={muted ? 'Unmute video' : 'Mute video'} onPress={toggleMute} style={styles.smallControlBtn}>
                 <Text style={styles.smallControlText}>{muted ? '🔇' : '🔊'}</Text>
@@ -374,12 +374,15 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
     width: '100%',
-    // Professional shadow for depth
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8, // Android shadow
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 8,
+        }),
   },
   cardCompact: {
     width: 220,
@@ -393,12 +396,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    // Inner shadow for video area
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.5)' }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+          elevation: 4,
+        }),
   },
   videoAreaCompact: {
     // slightly larger compact height for a more premium feel
@@ -445,6 +451,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web' ? { pointerEvents: 'none' } : {}),
   },
   playButtonTouchable: {
     alignItems: 'center',
@@ -477,6 +484,7 @@ const styles = StyleSheet.create({
     right: 10,
     flexDirection: 'row',
     gap: 10,
+    ...(Platform.OS === 'web' ? { pointerEvents: 'box-none' } : {}),
   },
   smallControlBtn: {
     backgroundColor: 'rgba(0,0,0,0.55)',

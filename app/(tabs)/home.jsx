@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import SearchInput from '../../components/SearchInput';
 import TrendingHorizontal from '../../components/TrendingHorizontal';
@@ -41,6 +42,7 @@ const getAccentFromName = (name) => {
 
 const Home = () => {
   const { user } = useGlobalContext();
+  const router = useRouter();
   const { data: posts, isLoading, refetch } = useAppwrite(getAllPosts);
   const { data: trendingPosts } = useAppwrite(getLatestPosts);
 
@@ -111,7 +113,9 @@ const Home = () => {
   }, [posts, searchQuery]);
 
   const handleSearch = () => {
-    console.log('Searching videos for:', searchQuery);
+    const q = String(searchQuery || '').trim();
+    if (!q) return; // SearchInput will alert if empty when no custom handler is given
+    router.push(`/search/${encodeURIComponent(q)}`);
   };
 
   const handleVideoPress = (nextPlaying, videoId) => {
