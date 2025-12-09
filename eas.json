@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "production": {
+      "node": "20.11.0",
+      "env": {
+        "EXPO_PUBLIC_OPENAI_KEY": "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"
+      }
+    },
+    "preview": {
+      "node": "20.11.0",
+      "env": {
+        "EXPO_PUBLIC_OPENAI_KEY": "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"
+      }
+    },
+    "development": {
+      "node": "20.11.0",
+      "env": {
+        "EXPO_PUBLIC_OPENAI_KEY": "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"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

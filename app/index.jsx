@@ -31,7 +31,7 @@ const Index = () => {
 
   // 2) If already logged in, skip auth screens and go to home
   if (isLoggedIn) {
-    return <Redirect href="/home" />;
+    return <Redirect href="/visit" />;
   }
 
   // 3) Not logged in → show the “Continue with email” landing card

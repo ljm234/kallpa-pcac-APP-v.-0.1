@@ -71,6 +71,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.5,
     textTransform: "uppercase",
-    fontSize: 15,
   },
 });

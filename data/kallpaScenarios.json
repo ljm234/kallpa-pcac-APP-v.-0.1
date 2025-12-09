@@ -1,0 +1,519 @@
+[
+  {
+    "id": "case_01_uti",
+    "title": "Case 01 – Acute dysuria in 21 y/o",
+    "symptomCluster": "UTI",
+    "clinicType": "Student clinic",
+    "language": "en",
+    "tags": ["Manage", "EN", "Low acuity"],
+    "heroStats": {
+      "riskLabel": "Risk: 5 / 16",
+      "decisionLabel": "Manage in clinic",
+      "language": "EN"
+    },
+    "chips": [
+      {"id": "fever", "label": "+ Fever 39°C", "description": "Simulated fever spike"},
+      {"id": "flank_pain", "label": "+ Flank pain", "description": "Patient endorses flank pain"},
+      {"id": "pregnancy", "label": "+ Pregnancy 8 weeks", "description": "Positive pregnancy test"}
+    ],
+    "clinicalHistory": {
+      "summary": "Previously healthy student with no chronic disease",
+      "pastMedical": ["Seasonal allergies"],
+      "medications": ["Oral contraceptive"],
+      "allergies": ["NKDA"],
+      "social": ["Lives in dorms", "Monogamous"],
+      "notes": "No prior UTIs documented in chart."
+    },
+    "labs": {
+      "baseline": [
+        {"name": "Temp", "value": "37.2", "unit": "°C", "flag": "normal"},
+        {"name": "UA leuk esterase", "value": "+", "unit": "", "flag": "abnormal"}
+      ],
+      "variants": {
+        "fever": [
+          {"name": "Temp", "value": "39.0", "unit": "°C", "flag": "high"},
+          {"name": "WBC", "value": "13.5", "unit": "K/µL", "flag": "high"}
+        ],
+        "flank_pain": [
+          {"name": "UA nitrites", "value": "+", "unit": "", "flag": "abnormal"}
+        ],
+        "pregnancy": [
+          {"name": "hCG", "value": "120,000", "unit": "mIU/mL", "flag": "high"}
+        ],
+        "fever|pregnancy": [
+          {"name": "Temp", "value": "39.4", "unit": "°C", "flag": "critical"}
+        ]
+      }
+    },
+    "attachments": [
+      {
+        "id": "uti_micro",
+        "type": "image",
+        "label": "Microscopy still",
+        "caption": "WBCs with occasional bacteria",
+        "thumbnail": "https://placehold.co/160x90",
+        "url": "https://placehold.co/800x600"
+      },
+      {
+        "id": "uti_lab_pdf",
+        "type": "document",
+        "label": "Lab requisition",
+        "caption": "UA with reflex culture order preset",
+        "url": "https://example.org/uti-labs.pdf"
+      }
+    ],
+    "transcript": [
+      {
+        "role": "patient",
+        "localeText": {
+          "en": "I've had painful urination for three days and some urgency.",
+          "es": "He tenido ardor al orinar durante tres días y mucha urgencia."
+        },
+        "delayMs": 0
+      },
+      {
+        "role": "clinician",
+        "localeText": {
+          "en": "Any fever, flank pain, or pregnancy concerns?",
+          "es": "¿Has tenido fiebre, dolor en el costado o sospecha de embarazo?"
+        },
+        "delayMs": 1200
+      },
+      {
+        "role": "patient",
+        "localeText": {
+          "en": "No fever, no flank pain, and I'm not pregnant.",
+          "es": "Sin fiebre, sin dolor en el costado y no estoy embarazada."
+        },
+        "delayMs": 2200
+      },
+      {
+        "role": "pcac",
+        "localeText": {
+          "en": "Drafting urinalysis with reflex culture and nitrofurantoin.",
+          "es": "Borrador de uroanálisis con cultivo y nitrofurantoína."
+        },
+        "delayMs": 2800
+      }
+    ],
+    "panels": {
+      "base": {
+        "riskScore": 5,
+        "riskMax": 16,
+        "riskTier": "moderate",
+        "decision": "manage",
+        "orders": [
+          {"type": "lab", "label": "Urinalysis with reflex culture"},
+          {"type": "med", "label": "Nitrofurantoin 100mg BID x5d"}
+        ],
+        "reasons": [
+          "Dysuria + frequency",
+          "No fever, no flank pain",
+          "No pregnancy, age 21"
+        ]
+      },
+      "variants": {
+        "fever": {
+          "riskScore": 9,
+          "riskTier": "high",
+          "decision": "escalate",
+          "orders": [
+            {"type": "lab", "label": "CBC + blood cultures"},
+            {"type": "lab", "label": "Serum creatinine"},
+            {"type": "med", "label": "Ceftriaxone 1g IM"}
+          ],
+          "reasons": [
+            "Dysuria + frequency",
+            "Fever 39°C",
+            "Concern for early pyelo"
+          ]
+        },
+        "flank_pain": {
+          "riskScore": 10,
+          "riskTier": "high",
+          "decision": "escalate",
+          "orders": [
+            {"type": "lab", "label": "Basic metabolic panel"},
+            {"type": "imaging", "label": "Renal ultrasound"}
+          ],
+          "reasons": [
+            "Flank pain",
+            "Rule out obstruction",
+            "Requires higher level of care"
+          ]
+        },
+        "pregnancy": {
+          "riskScore": 8,
+          "riskTier": "moderate",
+          "decision": "abstain",
+          "orders": [],
+          "reasons": [
+            "Pregnancy first trimester",
+            "Medication safety uncertainty",
+            "Recommend OB review"
+          ]
+        },
+        "fever|pregnancy": {
+          "riskScore": 12,
+          "riskTier": "critical",
+          "decision": "abstain",
+          "orders": [],
+          "reasons": [
+            "Fever 39°C",
+            "Pregnancy 8 weeks",
+            "Outside validated pathway"
+          ]
+        }
+      }
+    },
+    "detail": {
+      "hpi": "21-year-old nursing student with three days of dysuria, urgency, and no systemic symptoms.",
+      "whyEscalate": ["Systemic signs (fever, flank pain)", "Pregnancy requiring OB oversight"],
+      "learningPoints": ["UTI baseline risk stays moderate", "Clear ABSTAIN boundary when pregnant + febrile"],
+      "openInVisit": true,
+      "playbooks": [
+        {
+          "id": "case01_baseline",
+          "title": "Baseline dysuria",
+          "summary": "Moderate risk, manage in clinic with UA + nitrofurantoin.",
+          "variantIds": [],
+          "outcome": "Manage"
+        },
+        {
+          "id": "case01_fever",
+          "title": "+ Fever 39°C",
+          "summary": "Triggers high-risk pyelonephritis pathway and IM antibiotics.",
+          "variantIds": ["fever"],
+          "outcome": "Escalate"
+        },
+        {
+          "id": "case01_flank",
+          "title": "+ Flank pain",
+          "summary": "Orders renal ultrasound & basic metabolic panel for obstruction concerns.",
+          "variantIds": ["flank_pain"],
+          "outcome": "Escalate"
+        },
+        {
+          "id": "case01_pregnancy",
+          "title": "+ Pregnancy 8 weeks",
+          "summary": "System abstains until OB signs off on meds",
+          "variantIds": ["pregnancy"],
+          "outcome": "ABSTAIN"
+        },
+        {
+          "id": "case01_combo",
+          "title": "Fever + pregnancy",
+          "summary": "Outside validated pathway; shows explicit ABSTAIN messaging.",
+          "variantIds": ["fever", "pregnancy"],
+          "outcome": "ABSTAIN"
+        }
+      ]
+    }
+  },
+  {
+    "id": "case_02_meningitis",
+    "title": "Case 02 – Fever, headache & neck stiffness",
+    "symptomCluster": "Fever & Headache",
+    "clinicType": "Urban urgent care",
+    "language": "es",
+    "tags": ["Escalate", "ES", "High acuity"],
+    "heroStats": {
+      "riskLabel": "Risk: 13 / 16",
+      "decisionLabel": "Escalate to ED",
+      "language": "ES"
+    },
+    "chips": [
+      {"id": "tachycardia", "label": "+ HR 130", "description": "Sinus tachycardia"},
+      {"id": "immunocomp", "label": "+ Immunocompromised", "description": "On steroids"}
+    ],
+    "clinicalHistory": {
+      "summary": "Grad student with no prior CNS infections",
+      "pastMedical": ["Asthma"],
+      "medications": ["Albuterol PRN", "Prednisone taper"],
+      "allergies": ["Penicillin"],
+      "social": ["Lives in shared housing", "Up-to-date on vaccines"],
+      "notes": "Spanish is primary language; interpreter already present."
+    },
+    "labs": {
+      "baseline": [
+        {"name": "Temp", "value": "39.5", "unit": "°C", "flag": "high"},
+        {"name": "HR", "value": "112", "unit": "bpm", "flag": "high"}
+      ],
+      "variants": {
+        "tachycardia": [
+          {"name": "HR", "value": "130", "unit": "bpm", "flag": "critical"}
+        ],
+        "immunocomp": [
+          {"name": "Absolute neutrophils", "value": "1.2", "unit": "K/µL", "flag": "low"}
+        ]
+      }
+    },
+    "attachments": [
+      {
+        "id": "ct_head",
+        "type": "image",
+        "label": "CT order sheet",
+        "caption": "ED imaging request template",
+        "thumbnail": "https://placehold.co/160x90",
+        "url": "https://placehold.co/1024x768"
+      }
+    ],
+    "transcript": [
+      {
+        "role": "patient",
+        "localeText": {
+          "en": "My headache is crushing and my neck is stiff.",
+          "es": "Tengo un dolor de cabeza intenso y el cuello rígido."
+        },
+        "delayMs": 0
+      },
+      {
+        "role": "clinician",
+        "localeText": {
+          "en": "You look uncomfortable. Any sensitivity to light?",
+          "es": "Te ves incómodo. ¿Hay sensibilidad a la luz?"
+        },
+        "delayMs": 900
+      },
+      {
+        "role": "patient",
+        "localeText": {
+          "en": "Yes, light hurts and I feel nauseated.",
+          "es": "Sí, la luz molesta y tengo náuseas."
+        },
+        "delayMs": 1900
+      },
+      {
+        "role": "pcac",
+        "localeText": {
+          "en": "Escalating: possible meningitis. Recommend ED transfer now.",
+          "es": "Escalando: posible meningitis. Recomendar traslado inmediato a urgencias."
+        },
+        "delayMs": 2600
+      }
+    ],
+    "panels": {
+      "base": {
+        "riskScore": 13,
+        "riskMax": 16,
+        "riskTier": "high",
+        "decision": "escalate",
+        "orders": [
+          {"type": "note", "label": "Activate emergency transfer protocol"},
+          {"type": "lab", "label": "Blood cultures x2"}
+        ],
+        "reasons": [
+          "Severe headache + neck stiffness",
+          "Photophobia",
+          "Concern for CNS infection"
+        ]
+      },
+      "variants": {
+        "tachycardia": {
+          "riskScore": 14,
+          "riskTier": "critical",
+          "decision": "escalate",
+          "reasons": [
+            "Sinus tachycardia 130 bpm",
+            "Meets sepsis screening"
+          ]
+        },
+        "immunocomp": {
+          "riskScore": 15,
+          "riskTier": "critical",
+          "decision": "abstain",
+          "orders": [],
+          "reasons": [
+            "Immunocompromised host",
+            "Outside ambulatory protocol"
+          ]
+        }
+      }
+    },
+    "detail": {
+      "hpi": "27-year-old Spanish-speaking grad student with abrupt onset fever, headache, meningismus.",
+      "whyEscalate": ["Meets red flag criteria", "Need lumbar puncture and IV antibiotics"],
+      "learningPoints": ["Language equity maintained", "Explicit ABSTAIN for fragile hosts"],
+      "openInVisit": true,
+      "playbooks": [
+        {
+          "id": "case02_baseline",
+          "title": "Baseline meningitis suspicion",
+          "summary": "Escalate to ED with emergency transfer protocol.",
+          "variantIds": [],
+          "outcome": "Escalate"
+        },
+        {
+          "id": "case02_tachy",
+          "title": "+ Tachycardia 130 bpm",
+          "summary": "Shows sepsis alert while maintaining escalation path.",
+          "variantIds": ["tachycardia"],
+          "outcome": "Escalate"
+        },
+        {
+          "id": "case02_immunocomp",
+          "title": "+ Immunocompromised",
+          "summary": "Triggers ABSTAIN + outside ambulatory protocol warning.",
+          "variantIds": ["immunocomp"],
+          "outcome": "ABSTAIN"
+        }
+      ]
+    }
+  },
+  {
+    "id": "case_03_pregnancy",
+    "title": "Case 03 – Pregnancy with right lower quadrant pain",
+    "symptomCluster": "Pregnancy",
+    "clinicType": "Rural post",
+    "language": "en",
+    "tags": ["ABSTAIN", "EN", "Safety"],
+    "heroStats": {
+      "riskLabel": "Risk: 11 / 16",
+      "decisionLabel": "ABSTAIN",
+      "language": "EN"
+    },
+    "chips": [
+      {"id": "hemodynamic_unstable", "label": "+ BP 90/50", "description": "Hypotension"},
+      {"id": "no_ultrasound", "label": "- Ultrasound access", "description": "No imaging on site"}
+    ],
+    "clinicalHistory": {
+      "summary": "G1P0, prenatal care pending",
+      "pastMedical": ["Mild anemia"],
+      "medications": ["Prenatal vitamin"],
+      "allergies": ["None"],
+      "social": ["Lives 2 hours from referral center"],
+      "notes": "No prior surgeries; speaks Spanish and Quechua."
+    },
+    "labs": {
+      "baseline": [
+        {"name": "hCG", "value": "95,000", "unit": "mIU/mL", "flag": "expected"},
+        {"name": "Hgb", "value": "11.2", "unit": "g/dL", "flag": "borderline"}
+      ],
+      "variants": {
+        "hemodynamic_unstable": [
+          {"name": "BP", "value": "90/50", "unit": "mmHg", "flag": "critical"}
+        ],
+        "no_ultrasound": [
+          {"name": "Ultrasound availability", "value": "None", "unit": "", "flag": "info"}
+        ]
+      }
+    },
+    "attachments": [
+      {
+        "id": "rural_map",
+        "type": "image",
+        "label": "Transfer map",
+        "caption": "Route to regional OB hospital",
+        "thumbnail": "https://placehold.co/160x90",
+        "url": "https://placehold.co/800x600"
+      },
+      {
+        "id": "prenatal_card",
+        "type": "document",
+        "label": "Prenatal card photo",
+        "caption": "Initial labs from local post",
+        "url": "https://example.org/prenatal-card.pdf"
+      }
+    ],
+    "transcript": [
+      {
+        "role": "patient",
+        "localeText": {
+          "en": "I'm eight weeks pregnant and have sharp pain on the right side.",
+          "es": "Tengo ocho semanas de embarazo y dolor punzante en el lado derecho."
+        },
+        "delayMs": 0
+      },
+      {
+        "role": "clinician",
+        "localeText": {
+          "en": "Any bleeding or dizziness?",
+          "es": "¿Sangrado o mareos?"
+        },
+        "delayMs": 1000
+      },
+      {
+        "role": "patient",
+        "localeText": {
+          "en": "Light spotting yesterday, no dizziness yet.",
+          "es": "Sangrado leve ayer, sin mareos todavía."
+        },
+        "delayMs": 2100
+      },
+      {
+        "role": "pcac",
+        "localeText": {
+          "en": "ABSTAIN: Possible ectopic. Recommend immediate OB evaluation.",
+          "es": "ABSTENERSE: Posible ectópico. Recomendar evaluación obstétrica inmediata."
+        },
+        "delayMs": 3000
+      }
+    ],
+    "panels": {
+      "base": {
+        "riskScore": 11,
+        "riskMax": 16,
+        "riskTier": "high",
+        "decision": "abstain",
+        "orders": [
+          {"type": "note", "label": "Arrange EMS transfer"}
+        ],
+        "reasons": [
+          "Pregnancy <10 weeks",
+          "Localized RLQ pain",
+          "Clinic lacks ultrasound"
+        ]
+      },
+      "variants": {
+        "hemodynamic_unstable": {
+          "riskScore": 16,
+          "riskTier": "critical",
+          "decision": "abstain",
+          "reasons": [
+            "Hypotension",
+            "Concern for rupture",
+            "Stabilize and transfer"
+          ]
+        },
+        "no_ultrasound": {
+          "riskScore": 12,
+          "riskTier": "high",
+          "decision": "abstain",
+          "reasons": [
+            "No imaging available",
+            "Diagnostic uncertainty"
+          ]
+        }
+      }
+    },
+    "detail": {
+      "hpi": "24-year-old in rural Peru clinic, first trimester pain with spotting.",
+      "whyEscalate": ["Suspect ectopic", "Need imaging + OB"],
+      "learningPoints": ["ABSTAIN protects safety", "Language ready for EN/ES"],
+      "openInVisit": true,
+      "playbooks": [
+        {
+          "id": "case03_baseline",
+          "title": "Baseline RLQ pain",
+          "summary": "Shows default ABSTAIN recommendation and EMS transfer order.",
+          "variantIds": [],
+          "outcome": "ABSTAIN"
+        },
+        {
+          "id": "case03_hypotension",
+          "title": "+ BP 90/50",
+          "summary": "Emphasizes rupture risk, critical ABSTAIN messaging.",
+          "variantIds": ["hemodynamic_unstable"],
+          "outcome": "ABSTAIN"
+        },
+        {
+          "id": "case03_no_ultrasound",
+          "title": "No ultrasound access",
+          "summary": "Highlights diagnostic uncertainty narrative.",
+          "variantIds": ["no_ultrasound"],
+          "outcome": "ABSTAIN"
+        }
+      ]
+    }
+  }
+]

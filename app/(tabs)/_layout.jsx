@@ -48,42 +48,42 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="visit"
         options={{
-          title: 'Home',
+          title: 'Visit',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              emoji="🏠"
+              emoji="🩺"
               color={color}
-              name="Home"
+              name="Visit"
               focused={focused}
             />
           ),
         }}
       />
       <Tabs.Screen
-        name="bookmark"
+        name="cases"
         options={{
-          title: 'Bookmark',
+          title: 'Cases',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              emoji="🔖"
+              emoji="�"
               color={color}
-              name="Bookmark"
+              name="Cases"
               focused={focused}
             />
           ),
         }}
       />
       <Tabs.Screen
-        name="create"
+        name="impact"
         options={{
-          title: 'Create',
+          title: 'Impact',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              emoji="➕"
+              emoji="📈"
               color={color}
-              name="Create"
+              name="Impact"
               focused={focused}
             />
           ),

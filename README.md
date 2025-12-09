@@ -4,6 +4,13 @@
 - To use the iOS simulator, run: `npm run ios`
 - To run using the Expo Go app, run: `npx expo start --tunnel`
 
+## Quality gates & verification
+
+- **Lint**: `npm run lint` now runs ESLint with `@react-native/eslint-config` across JS/TS files. Fix any reported issues before committing.
+- **Tests**: `npm run test` executes Jest with the Expo preset and React Native Testing Library harness (see `jest.config.js` / `jest.setup.js`). Snapshot and interaction tests belong here.
+- **Doctor**: `npm run doctor` still invokes Expo Doctor for native dependency health checks; run when touching native modules or upgrading Expo SDKs.
+- Keep this section up to date whenever additional quality tooling (e.g., type-checking, end-to-end tests) is introduced.
+
 ## Documentation and Guides
 
 - Useful explaination of how building apps using Expo, including key concepts can be found here: [https://docs.expo.dev/workflow/overview/](https://docs.expo.dev/workflow/overview/).
@@ -110,11 +117,37 @@ This project includes an enhanced Trending Videos implementation designed to mee
 3. `perf(fetch): optimize getLatestPosts select columns`
 4. `docs: add premium trending architecture section`
 
+## Manual case capture prerequisites
+
+The Kallpa manual encounter workflow (Live Visit → Case Studio) depends on the Supabase backend you created earlier. Double-check these pieces before demoing uploads or saving new cases:
+
+1. **Tables**
+  - `kallpa_sessions`: stores raw recording metadata. Suggested columns: `id uuid default uuid_generate_v4() primary key`, `scenario_id text`, `language text`, `duration_ms integer`, `events jsonb`, `metadata jsonb`, `created_at timestamptz default now()`.
+  - `kallpa_cases`: stores manual encounter summaries. Suggested columns: `id uuid default uuid_generate_v4() primary key`, `title text`, `notes text`, `scenario_id text`, `language text`, `session_id uuid references kallpa_sessions(id)`, `clinic_type text`, `attachments jsonb`, `metadata jsonb`, `created_at timestamptz default now()`.
+  - Enable RLS and add `select/insert` policies for authenticated users (demo builds can broaden these policies if needed).
+2. **Storage**
+  - Bucket: `kallpa-assets` with public read + authenticated upload policies (see Supabase dashboard → Storage).
+  - Attachments are tagged with MIME metadata so UI chips can show their type badge; keep `contentType` accurate when uploading via dashboard scripts.
+3. **Device permissions**
+  - `expo-document-picker` will prompt for Files/Photos access. Users must grant access to attach evidence or previews will fail.
+  - iOS simulators sometimes cache the permission dialog; if uploads silently fail, reset simulator privacy settings.
+
+Once Jest/ESLint land, update this doc again so the workflow + quality gate sections point at the new scripts.
 ### Next Ideas (Optional Enhancements)
 - Global playback manager to ensure only one video plays across all lists.
 - Thumbnail prefetch & blurred preview while buffering.
 - Analytics events for play, pause, skip, fullscreen, completion.
 - Unit tests for autoplay gating and progress calculations.
+
+### Audio transcription setup
+
+The Case Studio screen can now auto-transcribe audio recordings directly into the transcript box using OpenAI's Whisper API. To enable this feature:
+
+1. Create an OpenAI API key with access to the Audio Transcriptions endpoint.
+2. Add the key to your Expo environment (e.g., `.env`) as `EXPO_PUBLIC_OPENAI_KEY=sk-your-key`.
+3. Restart the Expo server so the new env variable is available inside the client.
+
+When the key is present, importing an audio file (`.m4a`, `.wav`, `.mp3`, `.aac`, `.flac`, etc.) from the "Attach a recorded session" card will automatically upload it to OpenAI, receive the transcript text, and populate both the text area and the generated timeline events. If the key is missing or invalid, the UI will fall back to asking for plain-text transcript files.
 
 ## Video Upload Feature
 

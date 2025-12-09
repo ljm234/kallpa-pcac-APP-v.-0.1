@@ -1,0 +1,88 @@
+{
+  "profiles": [
+    {
+      "id": "student_utah",
+      "label": "Student clinic – Utah",
+      "throughput": {
+        "baseline": 18,
+        "assisted": 24,
+        "deltaPct": 32,
+        "caption": "+32% visits/hour per clinician (simulated)"
+      },
+      "riskDistribution": {
+        "labels": ["Low", "Moderate", "High", "ABSTAIN"],
+        "values": [48, 32, 13, 7],
+        "narrative": "ABSTAIN used in 7% of visits to keep safety high."
+      },
+      "languageEquity": {
+        "metrics": [
+          {"label": "ABSTAIN", "en": 6, "es": 8},
+          {"label": "Escalate", "en": 18, "es": 19},
+          {"label": "Manage", "en": 76, "es": 73}
+        ],
+        "narrative": "No major performance gap detected in Spanish vs English."
+      },
+      "documentation": {
+        "noteCompleteness": 95,
+        "guidelineAdherence": 92,
+        "narrative": "95% of visits with complete note fields; 92% of UTI cases guideline-concordant."
+      }
+    },
+    {
+      "id": "rural_peru",
+      "label": "Rural Peru tele-clinic",
+      "throughput": {
+        "baseline": 9,
+        "assisted": 13,
+        "deltaPct": 44,
+        "caption": "+44% encounters resolved remotely"
+      },
+      "riskDistribution": {
+        "labels": ["Low", "Moderate", "High", "ABSTAIN"],
+        "values": [36, 41, 15, 8],
+        "narrative": "ABSTAIN triggered more often to prioritize safety without imaging."
+      },
+      "languageEquity": {
+        "metrics": [
+          {"label": "ABSTAIN", "en": 8, "es": 9},
+          {"label": "Escalate", "en": 21, "es": 23},
+          {"label": "Manage", "en": 71, "es": 68}
+        ],
+        "narrative": "Spanish pathways tuned for low-bandwidth contexts."
+      },
+      "documentation": {
+        "noteCompleteness": 89,
+        "guidelineAdherence": 90,
+        "narrative": "90% adherence to maternal health bundles despite supply gaps."
+      }
+    },
+    {
+      "id": "urban_chile",
+      "label": "Urban Chile integrated clinic",
+      "throughput": {
+        "baseline": 25,
+        "assisted": 30,
+        "deltaPct": 20,
+        "caption": "+20% visits/hour with hybrid clinician + Kallpa teams"
+      },
+      "riskDistribution": {
+        "labels": ["Low", "Moderate", "High", "ABSTAIN"],
+        "values": [52, 30, 11, 7],
+        "narrative": "ABSTAIN stable at 7% as automation guardrail."
+      },
+      "languageEquity": {
+        "metrics": [
+          {"label": "ABSTAIN", "en": 7, "es": 7},
+          {"label": "Escalate", "en": 15, "es": 16},
+          {"label": "Manage", "en": 78, "es": 77}
+        ],
+        "narrative": "Dual-language counselors keep parity within ±1%."
+      },
+      "documentation": {
+        "noteCompleteness": 97,
+        "guidelineAdherence": 96,
+        "narrative": "Automated nudges push note completion above 97%."
+      }
+    }
+  ]
+}

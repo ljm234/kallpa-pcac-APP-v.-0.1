@@ -12,17 +12,26 @@
     },
     "ios": {
       "bundleIdentifier": "com.jmlabs.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "We use your microphone to capture realtime clinical audio for case documentation."
+      }
     },
     "android": {
       "package": "com.jmlabs.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#020817"
-      }
+      },
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
