@@ -104,8 +104,8 @@ This project includes an enhanced Trending Videos implementation designed to mee
 - Active card uses a subtle scale loop with easing (replaces aggressive pulse) for a premium feel.
 
 ### Accessibility & Polish
-- Buttons include `accessibilityLabel` text.
-- Reduced logging noise; easy to route to a debug logger if desired.
+Buttons include `accessibilityLabel` text.
+Logging output is minimized and can be routed to a debug logger if required.
 
 ### Performance
 - FlatList optimization using `getItemLayout`.
@@ -139,16 +139,6 @@ Once Jest/ESLint land, update this doc again so the workflow + quality gate sect
 - Analytics events for play, pause, skip, fullscreen, completion.
 - Unit tests for autoplay gating and progress calculations.
 
-### Audio transcription setup
-
-The Case Studio screen can now auto-transcribe audio recordings directly into the transcript box using OpenAI's Whisper API. To enable this feature:
-
-1. Create an OpenAI API key with access to the Audio Transcriptions endpoint.
-2. Add the key to your Expo environment (e.g., `.env`) as `EXPO_PUBLIC_OPENAI_KEY=sk-your-key`.
-3. Restart the Expo server so the new env variable is available inside the client.
-
-When the key is present, importing an audio file (`.m4a`, `.wav`, `.mp3`, `.aac`, `.flac`, etc.) from the "Attach a recorded session" card will automatically upload it to OpenAI, receive the transcript text, and populate both the text area and the generated timeline events. If the key is missing or invalid, the UI will fall back to asking for plain-text transcript files.
-
 ## Video Upload Feature
 
 This project includes a production-grade video upload system allowing users to create and publish video content with thumbnails and metadata.
@@ -156,7 +146,7 @@ This project includes a production-grade video upload system allowing users to c
 ### Features Implemented
 - **File Selection**: Video and image picker using `expo-document-picker`
 - **Dual Upload**: Separate uploads for video files and thumbnail images
-- **Metadata Capture**: Video title and AI prompt fields
+- **Metadata Capture**: Video title and description fields
 - **Form Validation**: Comprehensive validation ensuring all required fields are filled
 - **Loading States**: Visual feedback during upload process
 - **Error Handling**: User-friendly error messages for failed uploads
@@ -210,7 +200,7 @@ CREATE TABLE videos (
   title TEXT NOT NULL,
   video_url TEXT NOT NULL,
   thumbnail TEXT,
-  prompt TEXT,
+  description TEXT,
   creator UUID REFERENCES auth.users(id),
   author TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -224,7 +214,7 @@ CREATE TABLE videos (
    - Enter a catchy video title
    - Tap "Choose a video to upload" and select your video file
    - Tap "Choose a thumbnail" and select a thumbnail image
-   - Enter the AI prompt you used to create the video
+   - Enter a short description for the video
 3. **Submit**: Tap "Submit & Publish" to upload
 4. **Success**: After upload, you'll be redirected to Home where your video appears
 
@@ -252,7 +242,7 @@ const [form, setForm] = useState({
   title: "",      // Video title
   video: null,    // Selected video file
   thumbnail: null, // Selected thumbnail image
-  prompt: "",     // AI prompt
+  description: "", // Optional description
 });
 ```
 
@@ -261,7 +251,7 @@ const [form, setForm] = useState({
 - `submit()`: Validates form, uploads files, creates video record, redirects to home
 
 **UI Components**
-- FormField for text inputs (title, prompt)
+- FormField for text inputs (title, description)
 - TouchableOpacity for file upload areas
 - Video component for video preview
 - Image component for thumbnail preview
@@ -313,7 +303,7 @@ feat(upload): production-grade video upload with dual file support
 
 - Add uploadFile() and createVideo() functions to appwrite.js
 - Implement Create screen with video/thumbnail pickers
-- Add form validation for title, video, thumbnail, prompt
+- Add form validation for title, video, thumbnail, description
 - Include loading states and error handling
 - Auto-redirect to home after successful upload
 - Update FormField to support multiline and dark theme
